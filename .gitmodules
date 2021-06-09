@@ -1,0 +1,6 @@
+[submodule "twelvedata_client_java"]
+	path = twelvedata_client_java
+	url = http://github.com/ogallagher/twelvedata_client_java.git
+[submodule "temp_fx_logger"]
+	path = temp_fx_logger
+	url = http://github.com/ogallagher/temp_fx_logger
