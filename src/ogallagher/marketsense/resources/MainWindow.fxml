@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import java.net.URL?>
+<?import javafx.scene.layout.StackPane?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml/1" styleClass="root">
+	<stylesheets>
+		<URL value="@MainWindow.css" />
+	</stylesheets>
+	<top>
+		<ToolBar>
+			<items>
+				<Label text="test label 1"></Label>
+				<Label text="test label 2"></Label>
+				<Label text="test label 3"></Label>
+			</items>
+		</ToolBar>
+	</top>
+	
+	<center>
+		<StackPane fx:id="content">
+			<children>
+			</children>
+		</StackPane>
+	</center>
+	
+	<bottom>
+		<HBox fx:id="footer">
+			<children>
+				<Label text="footer content here" styleClass="monospace"></Label>
+			</children>
+		</HBox>
+	</bottom>
+</BorderPane>
+

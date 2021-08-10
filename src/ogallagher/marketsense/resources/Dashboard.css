@@ -1,0 +1,20 @@
+/*
+
+Owen Gallagher
+10 August 2021
+
+*/
+
+#userStats {
+	-fx-background-color: #ffffff;
+	-fx-font-size: 16px;
+}
+
+Button {
+	-fx-background-color: #435cff; 
+	-fx-text-fill: #ffffff;
+}
+
+Button:hover {
+	-fx-background-color: #140092;
+}

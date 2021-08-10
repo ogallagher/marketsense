@@ -1,0 +1,37 @@
+/*
+
+Owen Gallagher
+13 June 2021
+
+*/
+
+.root {
+	-fx-font-size: 14px;
+    -fx-font-family: sans-serif;
+    -fx-text-fill: #000;
+    -fx-background-color: #fff;
+}
+
+Toolbar {
+	-fx-background-color: #333;
+	-fx-padding: 4 4 4 4;
+}
+
+Toolbar Label {
+	-fx-text-fill: #fff;
+}
+
+#content {
+	-fx-padding: 8 8 8 8;
+}
+
+.monospace {
+	-fx-padding: 8 8 8 8;
+	-fx-font-family: monospace;
+}
+
+.h1 {
+	-fx-font-size: 24px;
+	-fx-font-weight: bold;
+	-fx-padding: 2 0 8 0; 
+}

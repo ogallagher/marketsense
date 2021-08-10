@@ -1,0 +1,14 @@
+/*
+
+Owen Gallagher
+13 June 2021
+
+*/
+
+#loginForm {
+	-fx-hgap: 4;
+	-fx-vgap: 8;
+	
+	-fx-background-color: #aaaaaa;
+	-fx-font-size: 16px;
+}

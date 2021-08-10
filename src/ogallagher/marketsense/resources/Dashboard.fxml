@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import java.net.URL?>
+<?import javafx.scene.control.Button?>
+
+<VBox xmlns:fx="http://javafx.com/fxml/1">
+	<stylesheets>
+		<URL value="@Dashboard.css" />
+	</stylesheets>
+	
+	<children>
+		<!-- title -->
+		<Label text="Dashboard" styleClass="h1"></Label>
+		
+		<HBox fx:id="userStats" spacing="8" alignment="CENTER_LEFT">
+			<children>
+				<Label fx:id="userName" text="username"></Label>
+				<Label fx:id="userAccuracy" text="accuracy"></Label>
+				<Label fx:id="userSince" text="since"></Label>
+				
+				<Button fx:id="logout" text="log out"></Button>
+			</children>
+		</HBox>
+	</children>
+</VBox>
