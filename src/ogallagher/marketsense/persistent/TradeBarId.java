@@ -2,6 +2,7 @@ package ogallagher.marketsense.persistent;
 
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import javax.persistence.*;
 
@@ -23,28 +24,19 @@ public class TradeBarId implements Serializable {
 		@JoinColumn(name=DB_COL_SEC_EXCHANGE, referencedColumnName=SecurityId.DB_COL_EXCHANGE)
 	})
 	private Security security;
-	private LocalDate date;
+	private LocalDateTime datetime;
 	
-	public static final String DB_COL_OPEN = "open";
-	float open;
-	public static final String DB_COL_HIGH = "high";
-	float high;
-	public static final String DB_COL_LOW = "low";
-	float low;
-	public static final String DB_COL_CLOSE = "close";
-	float close;
+	public static final String DB_COL_WIDTH = "width";
+	BarWidthType width;
 	
 	public TradeBarId() {
-		this(new Security(), LocalDate.MIN, 0, 0, 0, 0);
+		this(new Security(), LocalDateTime.MIN, BarWidthType.DAY);
 	}
 	
-	public TradeBarId(Security security, LocalDate date, float open, float high, float low, float close) {
+	public TradeBarId(Security security, LocalDateTime datetime, BarWidthType width) {
 		this.security = security;
-		this.date = date;
-		this.open = open;
-		this.high = high;
-		this.low = low;
-		this.close = close;
+		this.datetime = datetime;
+		this.width = width;
 	}
 	
 	@Override
@@ -54,7 +46,7 @@ public class TradeBarId implements Serializable {
 	
 	@Override
 	public String toString() {
-		return security.getId().toString() + date.toString();
+		return security.getId().toString() + "-" + datetime.toString();
 	}
 	
 	@Override

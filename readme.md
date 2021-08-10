@@ -16,6 +16,8 @@ The resulting program will be a sort of market analysis training, where the user
 
 [twelvedata market api](https://twelvedata.com/blog/first-introduction-getting-an-advantage-in-a-few-minutes) via custom Java client.
 
+Java Persistence API, with [Hibernate](https://hibernate.org) as the persistence provider, and [H2](https://h2database.com) as the database.
+
 ## Questions
 
 ### What similar work has been done that uses the brain for data processing?
@@ -90,7 +92,7 @@ Assume a **[data &rarr; sound mapping](#data-sound-maps)** is being used for inp
 
 2. Show the **output color while the input sound** is playing. **Randomize sound order**.
 
-3. Chain **sounds asa chronological sequence**, so that each subsequent sound corresponds to the same security as the previous, one step further in time, while the output color is shown continuously for each sound played.
+3. Chain **sounds as a chronological sequence**, so that each subsequent sound corresponds to the same security as the previous, one step further in time, while the output color is shown continuously for each sound played.
 
 4. Train with repeated sounds to reinforce sound-color matches previously established.
 

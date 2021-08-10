@@ -2,6 +2,7 @@ package ogallagher.marketsense.persistent;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 import javax.persistence.Embeddable;
 import javax.persistence.JoinColumn;
@@ -17,6 +18,8 @@ import javax.persistence.ManyToOne;
 public class TrainingSessionId implements Serializable {
 	private static final long serialVersionUID = -4254662257445784411L;
 	
+	private static LocalDateTime lastStart = LocalDateTime.MIN;
+	
 	public static final String DB_COL_PERSON = "person";
 	@ManyToOne
 	@JoinColumn(name=DB_COL_PERSON)
@@ -31,7 +34,18 @@ public class TrainingSessionId implements Serializable {
 	
 	public TrainingSessionId(Person person) {
 		this.person = person;
-		this.start = LocalDateTime.now();
+		
+		LocalDateTime rawStart = LocalDateTime.now();
+		
+		// prevent any overlapping start times
+		if (!rawStart.isAfter(lastStart)) {
+			start = lastStart.plusSeconds(1);
+		}
+		else {
+			start = rawStart;
+		}
+		
+		lastStart = start;
 	}
 	
 	@Override
@@ -41,7 +55,7 @@ public class TrainingSessionId implements Serializable {
 	
 	@Override
 	public String toString() {
-		return person.getUsername() + start.toString();
+		return person.getUsername() + "-" + start.toString();
 	}
 	
 	@Override

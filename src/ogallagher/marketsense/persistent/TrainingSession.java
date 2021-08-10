@@ -22,6 +22,9 @@ public class TrainingSession {
 	public static final String DB_COL_END = "end";
 	private LocalDateTime end;
 	
+	public static final String DB_COL_TYPE = "type";
+	private TrainingSessionType type;
+	
 	public static final String DB_COL_SAMPLE_SIZE = "sampleSize";
 	private int sampleSize;
 	
@@ -32,15 +35,21 @@ public class TrainingSession {
 	private int fails;
 	
 	public TrainingSession() {
-		this(new Person(), 0);
+		this(new Person(), TrainingSessionType.TBD, 0);
 	}
 	
-	public TrainingSession(Person person, int sampleSize) {
+	public TrainingSession(Person person, TrainingSessionType type, int sampleSize) {
 		this.id = new TrainingSessionId(person);
 		
+		this.type = type;
 		end = null;
 		this.sampleSize = sampleSize;
 		passes = 0;
 		fails = 0;
+	}
+	
+	@Override
+	public String toString() {
+		return "TrainingSession(id=" + id + ", type=" + type + ", sampleSize=" + sampleSize + ")";
 	}
 }

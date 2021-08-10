@@ -146,9 +146,9 @@ public class MarketSense {
 			
 			// run tests
 			if (runTests) {
-				new Test().evaluate();
+				new Test().evaluate(false);
 				
-				new TestDatabase().evaluate();
+				new TestDatabase(dbManager).evaluate(true);
 			}
 			
 			// load login form

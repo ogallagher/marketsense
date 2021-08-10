@@ -11,6 +11,7 @@ import javax.persistence.*;
 public class Security {
 	public static final String DB_TABLE = "Security";
 	
+	public static final String DB_COL_ID = "id";
 	@EmbeddedId
 	private SecurityId id;
 	
@@ -28,5 +29,18 @@ public class Security {
 	
 	public SecurityId getId() {
 		return id;
+	}
+	
+	public String getSymbol() {
+		return id.getSymbol();
+	}
+	
+	public String getExchange() {
+		return id.getExchange();
+	}
+	
+	@Override
+	public String toString() {
+		return "Security(id=" + id + ",type=" + type + ")";
 	}
 }

@@ -24,6 +24,14 @@ public class SecurityId implements Serializable {
 		this.exchange = exchange;
 	}
 	
+	public String getSymbol() {
+		return symbol;
+	}
+	
+	public String getExchange() {
+		return exchange;
+	}
+	
 	@Override
 	public int hashCode() {
 		return toString().hashCode();
@@ -31,7 +39,7 @@ public class SecurityId implements Serializable {
 	
 	@Override
 	public String toString() {
-		return exchange + ':' + symbol;
+		return exchange + '-' + symbol;
 	}
 	
 	@Override
