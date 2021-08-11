@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Properties;
 
 import javax.persistence.EntityManager;
-import javax.persistence.FlushModeType;
 import javax.persistence.Persistence;
 
 import javafx.application.Application;
@@ -43,12 +42,13 @@ import ogallagher.twelvedata_client_java.TwelvedataClient;
 import ogallagher.marketsense.persistent.Person;
 import ogallagher.marketsense.test.Test;
 import ogallagher.marketsense.test.TestDatabase;
+import ogallagher.marketsense.test.TestMarketSynth;
 import ogallagher.temp_fx_logger.System;
 
 /**
  * @author Owen Gallagher <github.com/ogallagher>
  * @since 9 June 2021
- * @version 0.0.1
+ * @version 0.0.2
  */
 public class MarketSense {
 	private static final String NAME = "MarketSense";
@@ -146,9 +146,11 @@ public class MarketSense {
 			
 			// run tests
 			if (runTests) {
-				new Test().evaluate(false);
+//				new Test().evaluate(false);
 				
-				new TestDatabase(dbManager).evaluate(true);
+//				new TestDatabase(dbManager).evaluate(true);
+				
+				new TestMarketSynth().evaluate(true);
 			}
 			
 			// load login form

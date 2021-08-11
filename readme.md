@@ -18,6 +18,8 @@ The resulting program will be a sort of market analysis training, where the user
 
 Java Persistence API, with [Hibernate](https://hibernate.org) as the persistence provider, and [H2](https://h2database.com) as the database.
 
+The Java Sound library to synthesize sound with custom [timbre](https://en.wikipedia.org/wiki/Timbre) and [melody](https://en.wikipedia.org/wiki/Melody), along with a controlled [amplitude](https://en.wikipedia.org/wiki/Amplitude) within a comfortable range.
+
 ## Questions
 
 ### What similar work has been done that uses the brain for data processing?

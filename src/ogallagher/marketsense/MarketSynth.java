@@ -1,0 +1,402 @@
+package ogallagher.marketsense;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.nio.ShortBuffer;
+import java.util.Date;
+
+import javax.sound.sampled.AudioFileFormat;
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+import javax.sound.sampled.DataLine;
+import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.Mixer;
+import javax.sound.sampled.SourceDataLine;
+
+/**
+ * Converts a 2D dataset to a sound, being a melody of pitches with constant timbre and amplitude using the
+ * shape of the input data. The approach is specifically designed with market asset prices in mind.
+ * 
+ * The resulting sound samples can then be played and saved to audio files.
+ * 
+ * @author Owen Gallagher
+ * @since 2021-08-11
+ *
+ */
+public class MarketSynth {
+	public static final SampleRate SAMPLE_RATE_DEFAULT = SampleRate.MEDIUM;
+	/**
+	 * Default duration of the sound/melody, in seconds.
+	 */
+	public static final int SOUND_DURATION_DEFAULT = 4;
+	/**
+	 * Default number of notes/pitches in the sound/melody.
+	 */
+	public static final int SOUND_NOTE_COUNT_DEFAULT = 10;
+	/**
+	 * Lowest comfortable frequency
+	 */
+	public static final int PITCH_MIN = 120;
+	/**
+	 * Highest comfortable frequency.
+	 */
+	public static final int PITCH_MAX = 800;
+	/**
+	 * {@link PITCH_MAX} - {@link PITCH_MIN}
+	 */
+	public static final int PITCH_RANGE = PITCH_MAX - PITCH_MIN;
+	public static final String SOUNDS_DIR = "sounds";
+	public static final String FILE_EXT = ".wav";
+	
+	private SampleSize sampleSize = SampleSize.SIXTEEN;
+	private SampleRate sampleRate = SAMPLE_RATE_DEFAULT;
+	private AudioChannels channels = AudioChannels.MONO;
+	boolean signed = true;
+	boolean bigEndian = true; // Java is big endian by default
+	/**
+	 * Encapsulates all the audio data formatting parameters.
+	 */
+	private AudioFormat audioFormat;
+	
+	/**
+	 * Duration of the sound, in seconds.
+	 */
+	private int soundDuration = SOUND_DURATION_DEFAULT;
+	/**
+	 * Maximum allowed amplitude, given the datatype max value representing a single sample.
+	 */
+	public static int amplitudeMax;
+	/**
+	 * Fixed amplitude/volume as a proportion of {@link AMPLITUDE_MAX}.
+	 */
+	private float amplitude = 0.3f;
+	
+	/**
+	 * Line that feeds sound to speakers for playback.
+	 */
+	private SourceDataLine playbackLine = null;
+	
+	/**
+	 * Raw sound data, which can be split into samples and frames for playback.
+	 */
+	private byte[] soundData;
+	/**
+	 * Number of frames in the sound.
+	 */
+	private int frameCount;
+	
+	private static File soundsDir;
+	
+	static {
+		// ensure sounds dir exists
+		String workingDir = MarketSense.class.getResource("./").getPath();
+		soundsDir = new File(workingDir, SOUNDS_DIR);
+		if (!soundsDir.exists()) {
+			soundsDir.mkdir();
+			System.out.println("created sounds dir at " + soundsDir.getAbsolutePath());
+		}
+		else {
+			System.out.println("found sounds dir at " + soundsDir.getAbsolutePath());
+		}
+	}
+	
+	public MarketSynth() {
+		// connect mixer to the proper audio output channel
+		audioFormat = new AudioFormat(
+			sampleRate.getRate(),
+			sampleSize.getSize(), 
+			channels.getCount(), 
+			signed, 
+			bigEndian
+		);
+		
+		if (sampleSize == SampleSize.SIXTEEN) {
+			amplitudeMax = Short.MAX_VALUE;
+		}
+		else {
+			amplitudeMax = Byte.MAX_VALUE;
+		}
+		
+		soundData = new byte[
+		    sampleRate.getRate() *
+		    sampleSize.getByteSize() *
+		    channels.getCount() * 
+		    soundDuration
+		];
+		
+		frameCount = soundData.length/audioFormat.getFrameSize();
+	}
+	
+	/**
+	 * Convert the market data to a sound, accessible via audio input stream. If {@code marketData=null}
+	 * then a random sequence of length {@link SOUND_NOTE_COUNT_DEFAULT} is generated.
+	 * 
+	 * If the market data is already normalized, use with {@code normalize=false}
+	 * 
+	 * @param marketData
+	 * @param normalize Whether to normalize the data (constrain in range {@code [0..1]}), or not. If not,
+	 * the data should already be normalized. If {@code marketData=null} then this arg is ignored.
+	 */
+	public AudioInputStream synthesize(float[] marketData, boolean normalize) {
+		// generate market data if not provided
+		if (marketData == null) {
+			marketData = new float[SOUND_NOTE_COUNT_DEFAULT];
+			
+			for (int d=0; d<marketData.length; d++) {
+				marketData[d] = (float) Math.random();
+			}
+		}
+		else if (normalize) {
+			// normalize market data
+			float min = marketData[0];
+			float max = min;
+			
+			// find range
+			for (int d=1; d<marketData.length; d++) {
+				float datum = marketData[d];
+				if (datum < min) {
+					min = datum;
+				}
+				else if (datum > max) {
+					max = datum;
+				}
+			}
+			float range = max-min;
+			
+			// constrain
+			for (int d=0; d<marketData.length; d++) {
+				float raw = marketData[d];
+				
+				marketData[d] = (raw-min) / range;
+			}
+		}
+		
+		// convert to buffer object of bytes or shorts depending on sample size
+		Buffer soundBuffer;
+		boolean shortNotByte;
+		if (sampleSize == SampleSize.EIGHT) {
+			soundBuffer = ByteBuffer.wrap(soundData);
+			shortNotByte = false;
+		}
+		else {
+			soundBuffer = ByteBuffer.wrap(soundData).asShortBuffer();
+			shortNotByte = true;
+		}
+		
+		// write samples to soundBuffer=>soundData
+		float pitchRadius = PITCH_RANGE*0.5f;
+		float pitchCenter = PITCH_MIN + pitchRadius;
+		float amplitudeValue = amplitude * amplitudeMax;
+		System.out.println("synth sound with pitch=" + pitchCenter + " amplitude=" + amplitudeValue);
+		int rate = sampleRate.getRate();
+		final double TWO_PI = 2 * Math.PI;
+		
+		int noteCount = marketData.length;
+		int noteSampleSize = soundBuffer.capacity() / noteCount;
+		double pitch = PITCH_MIN;
+		int note = 0;
+		
+		for (float s=0; s<soundBuffer.capacity(); s++) {
+			if (s % noteSampleSize == 0) {
+				pitch = pitchCenter + (marketData[note++]-0.5) * pitchRadius;
+			}
+			
+			double time = s/rate;
+			
+			double sample = Math.sin(TWO_PI*pitch*time) * amplitudeValue;
+			
+			if (shortNotByte) {
+				((ShortBuffer) soundBuffer).put((short) sample); 
+			}
+			else {
+				((ByteBuffer) soundBuffer).put((byte) sample);
+			}
+	    }
+		
+		// convert soundData to audio input stream
+		AudioInputStream soundStream = new AudioInputStream(
+			new ByteArrayInputStream(soundData),
+			audioFormat,
+			frameCount
+		);
+		
+		return soundStream;
+	}
+	
+	/**
+	 * Play the given sound a given number of times.
+	 */
+	public void playback(AudioInputStream soundStream, int repeats) {
+		if (playbackLine == null) {
+			// retrieve the current playback line
+			DataLine.Info lineInfo = new DataLine.Info(SourceDataLine.class, audioFormat);
+			try {
+				playbackLine = (SourceDataLine) AudioSystem.getLine(lineInfo);
+			} 
+			catch (LineUnavailableException e) {
+				System.out.println("error: no playback line available");
+			}
+		}
+		
+		if (playbackLine != null) {
+			try {
+				soundStream.reset();
+				new PlaybackThread(soundStream, playbackLine, repeats).start();
+			} 
+			catch (IOException e) {
+				System.out.println("failed to reset sound stream for playback");
+			}
+		}
+		else {
+			System.out.println("speakers not connected; skipping playback");
+		}
+	}
+	
+	/**
+	 * Same the given sound to a file.
+	 * 
+	 * @param filePath
+	 */
+	public void save(AudioInputStream soundStream, String filename) {
+		File file = new File(soundsDir.getAbsolutePath(), filename + FILE_EXT);
+		
+		try {
+			soundStream.reset();
+			AudioSystem.write(soundStream, AudioFileFormat.Type.WAVE, file);
+			System.out.println("saved sound to " + file.getAbsolutePath());
+		}
+		catch (IOException e) {
+			System.out.println("error: failed to save sound to " + file.getAbsolutePath());
+		}
+	}
+	
+	public class PlaybackThread extends Thread {
+		private AudioInputStream soundStream;
+		private SourceDataLine playbackLine;
+		private int repeats;
+		private byte[] playBuffer;
+		
+		public PlaybackThread(AudioInputStream soundStream, SourceDataLine playbackLine, int repeats) {
+			this.soundStream = soundStream;
+			this.playbackLine = playbackLine;
+			this.repeats = repeats;
+			
+			playBuffer = new byte[playbackLine.getBufferSize()];
+			System.out.println("init playback line with buffer size " + playBuffer.length);
+		}
+		
+		public void run() {
+			try {
+				playbackLine.open(audioFormat);
+				playbackLine.start();
+				
+				long start = new Date().getTime();
+				int total = 0;
+				
+				while (total < soundData.length) {
+					int newBytes = soundStream.read(playBuffer);
+					if (newBytes == -1) break;
+					total += newBytes;
+					playbackLine.write(playBuffer, 0, newBytes);
+				}
+				
+				playbackLine.drain();
+				playbackLine.stop();
+				
+				long elapsed = new Date().getTime() - start;
+				System.out.println("played sound for " + elapsed/1000f + " seconds");
+			} 
+			catch (LineUnavailableException e) {
+				System.out.println("speakers no longer available for playback: " + e.getMessage());
+			} 
+			catch (IOException e) {
+				System.out.println("sound read failed: " + e.getMessage());
+			}
+		}
+	}
+	
+	/**
+	 * Allowable sample rates (samples per second): 8000,11025,16000,22050,44100
+	 * 
+	 * Higher sample rate means higher range of available frequencies.
+	 * 
+	 * @author Owen Gallagher
+	 *
+	 */
+	public static enum SampleRate {
+		LOWEST(8000), 
+		LOW(11025),
+		MEDIUM(16000),
+		HIGH(22050),
+		HIGHEST(44100);
+		
+		private int rate;
+		
+		/**
+		 * @return Number of samples per second (sample rate).
+		 */
+		public int getRate() {
+			return rate;
+		}
+		
+		private SampleRate(int rate) {
+			this.rate = rate;
+		}
+	}
+	
+	/**
+	 * Allowable sample sizes, in bits: 8,16
+	 * 
+	 * A sample is a single position for the vibrating membrane, and the size of the sample determines the
+	 * number of possible positions.
+	 * 
+	 * @author Owen Gallagher
+	 *
+	 */
+	public static enum SampleSize {
+		EIGHT(Byte.SIZE),
+		SIXTEEN(Short.SIZE);
+		
+		private int size;
+		private int byteSize;
+		
+		/**
+		 * @return Number of bits.
+		 */
+		public int getSize() {
+			return size;
+		}
+		
+		/**
+		 * @return Number of bytes.
+		 */
+		public int getByteSize() {
+			return byteSize;
+		}
+		
+		private SampleSize(int size) {
+			this.size = size;
+			this.byteSize = size/Byte.SIZE;
+		}
+	}
+	
+	public static enum AudioChannels {
+		MONO(1),
+		STEREO(2);
+		
+		private int count;
+		
+		public int getCount() {
+			return count;
+		}
+		
+		private AudioChannels(int count) {
+			this.count = count;
+		}
+	}
+}
