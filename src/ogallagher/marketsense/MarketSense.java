@@ -106,7 +106,7 @@ public class MarketSense {
 			runTests = Boolean.valueOf(properties.getProperty(PROP_RUN_TESTS, "false"));
 			
 			// connect twelvedata client
-//			tdclient = new TwelvedataClient(properties.getProperty(PROP_TWELVEDATA_API_KEY, null));
+			tdclient = new TwelvedataClient(properties.getProperty(PROP_TWELVEDATA_API_KEY, null));
 		}
 	}
 	
@@ -146,7 +146,7 @@ public class MarketSense {
 			
 			// run tests
 			if (runTests) {
-				runTests(false, false, false);
+				runTests(false, false, true);
 			}
 			
 			// load login form

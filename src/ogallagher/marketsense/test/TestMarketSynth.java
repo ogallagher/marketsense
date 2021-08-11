@@ -32,7 +32,7 @@ public class TestMarketSynth extends Test {
 		}
 		
 		// playback
-		marketSynth.playback(sound, 1);
+		marketSynth.playback(sound, 4);
 	}
 	
 	@Override

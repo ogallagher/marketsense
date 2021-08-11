@@ -35,7 +35,7 @@ public class MarketSynth {
 	/**
 	 * Default duration of the sound/melody, in seconds.
 	 */
-	public static final int SOUND_DURATION_DEFAULT = 4;
+	public static final int SOUND_DURATION_DEFAULT = 2;
 	/**
 	 * Default number of notes/pitches in the sound/melody.
 	 */
@@ -418,20 +418,25 @@ public class MarketSynth {
 				playbackLine.start();
 				
 				long start = new Date().getTime();
-				int total = 0;
 				
-				while (total < soundData.length) {
-					int newBytes = soundStream.read(playBuffer);
-					if (newBytes == -1) break;
-					total += newBytes;
-					playbackLine.write(playBuffer, 0, newBytes);
+				for (int r=0; r<repeats; r++) {
+					int total = 0;
+					
+					while (total < soundData.length) {
+						int newBytes = soundStream.read(playBuffer);
+						if (newBytes == -1) break;
+						total += newBytes;
+						playbackLine.write(playBuffer, 0, newBytes);
+					}
+					
+					soundStream.reset();
 				}
 				
 				playbackLine.drain();
 				playbackLine.stop();
 				
 				long elapsed = new Date().getTime() - start;
-				System.out.println("played sound for " + elapsed/1000f + " seconds");
+				System.out.println("played sound " + repeats + " times for " + elapsed/1000f + " seconds");
 			} 
 			catch (LineUnavailableException e) {
 				System.out.println("speakers no longer available for playback: " + e.getMessage());
