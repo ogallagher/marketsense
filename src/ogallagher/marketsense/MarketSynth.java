@@ -136,7 +136,9 @@ public class MarketSynth {
 	 * Convert the market data to a sound, accessible via audio input stream. If {@code marketData=null}
 	 * then a random sequence of length {@link SOUND_NOTE_COUNT_DEFAULT} is generated.
 	 * 
-	 * If the market data is already normalized, use with {@code normalize=false}
+	 * If the market data is already normalized, use with {@code normalize=false}.
+	 * 
+	 * TODO add a small silence between notes to allow speaker to transition between frequencies.
 	 * 
 	 * @param marketData
 	 * @param normalize Whether to normalize the data (constrain in range {@code [0..1]}), or not. If not,
@@ -198,17 +200,36 @@ public class MarketSynth {
 		
 		int noteCount = marketData.length;
 		int noteSampleSize = soundBuffer.capacity() / noteCount;
+		
+		double[] timbre = null;
 		double pitch = PITCH_MIN;
 		int note = 0;
+		int timbreSample = 0;
 		
 		for (float s=0; s<soundBuffer.capacity(); s++) {
 			if (s % noteSampleSize == 0) {
+				// move pitch to next note
 				pitch = pitchCenter + (marketData[note++]-0.5) * pitchRadius;
+				
+				// create timbre matching input data shape with new length
+				int periodSampleSize = (int) (rate / pitch);
+				timbre = new double[periodSampleSize];
+				
+				double tld = timbre.length;
+				for (int t=0; t<timbre.length; t++) {
+					double tt = t/tld;
+					int di = (int) (tt * marketData.length);
+					timbre[t] = Math.sin(TWO_PI*tt) * amplitudeValue * marketData[di];
+				}
 			}
 			
 			double time = s/rate;
 			
-			double sample = Math.sin(TWO_PI*pitch*time) * amplitudeValue;
+			// select sample from within current timbre
+			if (timbreSample >= timbre.length) {
+				timbreSample = 0;
+			}
+			double sample = timbre[timbreSample++];
 			
 			if (shortNotByte) {
 				((ShortBuffer) soundBuffer).put((short) sample); 
