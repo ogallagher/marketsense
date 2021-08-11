@@ -29,6 +29,8 @@ import javax.sound.sampled.SourceDataLine;
  *
  */
 public class MarketSynth {
+	private static final double TWO_PI = 2 * Math.PI;
+	
 	public static final SampleRate SAMPLE_RATE_DEFAULT = SampleRate.MEDIUM;
 	/**
 	 * Default duration of the sound/melody, in seconds.
@@ -50,6 +52,15 @@ public class MarketSynth {
 	 * {@link PITCH_MAX} - {@link PITCH_MIN}
 	 */
 	public static final int PITCH_RANGE = PITCH_MAX - PITCH_MIN;
+	/**
+	 * Default timbre mapping formula.
+	 */
+	public static final TimbreFormula TIMBRE_FORMULA_DEFAULT = TimbreFormula.HARMONIC_REDOI;
+	/**
+	 * Default amplitude formula.
+	 */
+	public static final AmplitudeFormula AMPLITUDE_FORMULA_DEFAULT = AmplitudeFormula.CONST;
+	
 	public static final String SOUNDS_DIR = "sounds";
 	public static final String FILE_EXT = ".wav";
 	
@@ -75,6 +86,8 @@ public class MarketSynth {
 	 * Fixed amplitude/volume as a proportion of {@link AMPLITUDE_MAX}.
 	 */
 	private float amplitude = 0.3f;
+	private AmplitudeFormula amplitudeFormula = AMPLITUDE_FORMULA_DEFAULT;
+	private TimbreFormula timbreFormula = TIMBRE_FORMULA_DEFAULT;
 	
 	/**
 	 * Line that feeds sound to speakers for playback.
@@ -130,6 +143,20 @@ public class MarketSynth {
 		];
 		
 		frameCount = soundData.length/audioFormat.getFrameSize();
+	}
+	
+	public MarketSynth(TimbreFormula timbreFormula, AmplitudeFormula amplitudeFormula) {
+		this();
+		this.timbreFormula = timbreFormula;
+		this.amplitudeFormula = amplitudeFormula;
+	}
+	
+	public void setTimbreFormula(TimbreFormula timbreFormula) {
+		this.timbreFormula = timbreFormula;
+	}
+	
+	public void setAmplitudeFormula(AmplitudeFormula amplitudeFormula) {
+		this.amplitudeFormula = amplitudeFormula;
 	}
 	
 	/**
@@ -196,7 +223,6 @@ public class MarketSynth {
 		float amplitudeValue = amplitude * amplitudeMax;
 		System.out.println("synth sound with pitch=" + pitchCenter + " amplitude=" + amplitudeValue);
 		int rate = sampleRate.getRate();
-		final double TWO_PI = 2 * Math.PI;
 		
 		int noteCount = marketData.length;
 		int noteSampleSize = soundBuffer.capacity() / noteCount;
@@ -215,15 +241,11 @@ public class MarketSynth {
 				int periodSampleSize = (int) (rate / pitch);
 				timbre = new double[periodSampleSize];
 				
-				double tld = timbre.length;
-				for (int t=0; t<timbre.length; t++) {
-					double tt = t/tld;
-					int di = (int) (tt * marketData.length);
-					timbre[t] = Math.sin(TWO_PI*tt) * amplitudeValue * marketData[di];
-				}
+				// write values to timbre
+				createTimbre(marketData, amplitudeValue, timbre);
 			}
 			
-			double time = s/rate;
+			// double time = s/rate;
 			
 			// select sample from within current timbre
 			if (timbreSample >= timbre.length) {
@@ -247,6 +269,85 @@ public class MarketSynth {
 		);
 		
 		return soundStream;
+	}
+	
+	/**
+	 * 
+	 * @param marketData
+	 * @param timbre Output parameter into which timbre values for a single period are written.
+	 */
+	private void createTimbre(float[] marketData, float amplitude, double[] timbre) {
+		double tld = timbre.length;
+		for (int t=0; t<timbre.length; t++) {
+			double tt;
+			int di;
+			double tv;
+			double theta;
+			int oi;
+			double den;
+			
+			switch (timbreFormula) {
+				case SINE:
+					// pure sine
+					tt = t/tld;
+					timbre[t] = Math.sin(TWO_PI*tt) * amplitude;
+					break;
+					
+				case ABS_AMP:
+					// raw price absolute amplitudes (half amplitude)
+					tt = t/tld;
+					di = (int) (tt * marketData.length);
+					
+					timbre[t] = amplitude * marketData[di];
+					break;
+					
+				case MULT:
+					// price as sine amplitude multiplier
+					tt = t/tld;
+					di = (int) (tt * marketData.length);
+					
+					timbre[t] = Math.sin(TWO_PI*tt) * amplitude * marketData[di];
+					break;
+					
+				case HARMONIC_REDOI:
+					// price as harmonic overtone of fundamental pitch with reduced amplitude according to overtone index
+					tt = t/tld;
+					theta = TWO_PI*tt;
+					
+					tv = Math.sin(theta) * amplitude;
+					
+					oi = marketData.length; // overtone index
+					den = 2 * marketData.length * marketData.length; // denominator
+					for (float dv : marketData) {
+						double ra = amplitude * oi / den; // reduced amplitude
+						tv += Math.sin(theta + (theta * dv)) * ra;
+						oi--;
+					}
+					
+					timbre[t] = tv;
+					break;
+					
+				case MULT_HARMROI:
+					// combine MULT and HARMONIC_REDOI
+					tt = t/tld;
+					di = (int) (tt * marketData.length); // nearest pitch, duration scaled to 1 period
+					theta = TWO_PI*tt;
+					
+					double am = amplitude * marketData[di];
+					tv = Math.sin(theta) * am;
+					
+					oi = marketData.length; // overtone index
+					den = 2 * marketData.length * marketData.length; // denominator
+					for (float dv : marketData) {
+						double ra = am * oi / den; // reduced amplitude
+						tv += Math.sin(theta + (theta * dv)) * ra;
+						oi--;
+					}
+					
+					timbre[t] = tv;
+					break;
+			}
+		}
 	}
 	
 	/**
@@ -284,7 +385,7 @@ public class MarketSynth {
 	 * @param filePath
 	 */
 	public void save(AudioInputStream soundStream, String filename) {
-		File file = new File(soundsDir.getAbsolutePath(), filename + FILE_EXT);
+		File file = new File(soundsDir.getAbsolutePath(), timbreFormula.toString() + "_" + filename + FILE_EXT);
 		
 		try {
 			soundStream.reset();
@@ -418,6 +519,76 @@ public class MarketSynth {
 		
 		private AudioChannels(int count) {
 			this.count = count;
+		}
+	}
+	
+	/**
+	 * 
+	 * @author Owen Gallagher
+	 * @since 2021-08-11
+	 *
+	 */
+	public static enum TimbreFormula {
+		/**
+		 * Pure sine wave, no timbre.
+		 */
+		SINE,
+		/**
+		 * Prices are amplitude multipliers within a period.
+		 */
+		MULT, 
+		/**
+		 * Prices are direct amplitudes within a period, and remain 0-1 normalized, staying in
+		 * positive range and thus only using half of the available amplitude.
+		 */
+		ABS_AMP,
+		/**
+		 * Prices are harmonic overtone pitches that are composed on the fundamental pitch with
+		 * reduced amplitudes according to overtone index.
+		 */
+		HARMONIC_REDOI,
+		/**
+		 * Combine {@link ABS_AMP} with {@link HARMONIC_REDOI}.
+		 */
+		MULT_HARMROI;
+		
+		public String toString() {
+			switch (this) {
+				case SINE:
+					return "sine";
+					
+				case ABS_AMP:
+					return "absamp";
+					
+				case HARMONIC_REDOI:
+					return "harmredoi";
+					
+				case MULT:
+					return "mult";
+					
+				case MULT_HARMROI:
+					return "multharmroi";
+					
+				default:
+					return "unk";
+			}
+		}
+	}
+	
+	public static enum AmplitudeFormula {
+		/**
+		 * Constant amplitude.
+		 */
+		CONST;
+		
+		public String toString() {
+			switch (this) {
+				case CONST:
+					return "const";
+				
+				default:
+					return "unk";
+			}
 		}
 	}
 }

@@ -146,11 +146,7 @@ public class MarketSense {
 			
 			// run tests
 			if (runTests) {
-//				new Test().evaluate(false);
-				
-//				new TestDatabase(dbManager).evaluate(true);
-				
-				new TestMarketSynth().evaluate(true);
+				runTests(false, false, false);
 			}
 			
 			// load login form
@@ -343,6 +339,27 @@ public class MarketSense {
 		
 		// show login
 		loadPeople(MarketSenseGUI.ShowLogin.class, true);
+	}
+	
+	/**
+	 * Run designated tests.
+	 * 
+	 * @param base Basic test.
+	 * @param database Database test. 
+	 * @param marketSynth Market sound synth test.
+	 */
+	public static void runTests(boolean base, boolean database, boolean marketSynth) {
+		System.out.println("running tests");
+		
+		if (base) {
+			new Test().evaluate(false);
+		}
+		if (database) {
+			new TestDatabase(dbManager).evaluate(true);
+		}
+		if (marketSynth) {
+			new TestMarketSynth().evaluate(false);
+		}
 	}
 	
 	private static Properties getProperties() throws FileNotFoundException {

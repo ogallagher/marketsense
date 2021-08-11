@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import javax.sound.sampled.AudioInputStream;
 
 import ogallagher.marketsense.MarketSynth;
+import ogallagher.marketsense.MarketSynth.AmplitudeFormula;
+import ogallagher.marketsense.MarketSynth.TimbreFormula;
 
 /**
  * Test market data audio synthesizer.
@@ -17,7 +19,7 @@ public class TestMarketSynth extends Test {
 	private MarketSynth marketSynth;
 	
 	public TestMarketSynth() {
-		marketSynth = new MarketSynth();
+		marketSynth = new MarketSynth(TimbreFormula.MULT_HARMROI, AmplitudeFormula.CONST);
 	}
 	
 	public void dummySound(boolean persistDummies) {
