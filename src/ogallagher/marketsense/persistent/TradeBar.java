@@ -30,7 +30,7 @@ public class TradeBar {
 		id = new TradeBarId();
 	}
 	
-	public TradeBar(Security security, LocalDateTime datetime, BarWidthType width, float open, float high, float low, float close) {
+	public TradeBar(Security security, LocalDateTime datetime, String width, float open, float high, float low, float close) {
 		id = new TradeBarId(security,datetime,width);
 		
 		this.open = open;

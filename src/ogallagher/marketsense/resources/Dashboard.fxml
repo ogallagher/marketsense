@@ -4,8 +4,15 @@
 <?import javafx.scene.control.*?>
 <?import java.net.URL?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.TextField?>
+<?import java.lang.String?>
+<?import java.lang.Integer?>
 
-<VBox xmlns:fx="http://javafx.com/fxml/1">
+<VBox xmlns:fx="http://javafx.com/fxml/1" alignment="TOP_CENTER" spacing="4">
 	<stylesheets>
 		<URL value="@Dashboard.css" />
 	</stylesheets>
@@ -14,13 +21,74 @@
 		<!-- title -->
 		<Label text="Dashboard" styleClass="h1"></Label>
 		
-		<HBox fx:id="userStats" spacing="8" alignment="CENTER_LEFT">
+		<!-- user stats and logout button -->
+		<HBox fx:id="userStats" spacing="8" alignment="CENTER_LEFT" styleClass="h3">
 			<children>
 				<Label fx:id="userName" text="username"></Label>
 				<Label fx:id="userAccuracy" text="accuracy"></Label>
 				<Label fx:id="userSince" text="since"></Label>
 				
 				<Button fx:id="logout" text="log out"></Button>
+			</children>
+		</HBox>
+		
+		<HBox spacing="8" alignment="TOP_LEFT">
+			<children>
+				<!--  session history -->
+				<VBox alignment="TOP_LEFT">
+					<Label text="Session History" styleClass="h2"></Label>
+					
+					<ListView fx:id="sessionHistory"></ListView>
+				</VBox>
+				
+				<!-- new session form -->
+				<VBox alignment="TOP_LEFT" spacing="4">
+					<Label text="New Session" styleClass="h2"></Label>
+					
+					<HBox spacing="8">
+						<children>
+							<Label text="symbol"></Label>
+							<ComboBox fx:id="trainSymbol">
+								<value><String fx:value="AAPL"/></value>
+							</ComboBox>
+						</children>
+					</HBox>
+					<HBox spacing="8">
+						<children>
+							<Label text="bar width"></Label>
+							<ComboBox fx:id="trainBarWidth">
+								<value><String fx:value="1day"/></value>
+							</ComboBox>
+						</children>
+					</HBox>
+					<HBox spacing="8">
+						<children>
+							<Label text="sample size"></Label>
+							<ComboBox fx:id="trainSampleSize">
+								<value><Integer fx:value="7"/></value>
+							</ComboBox>
+							<Label text="bars"></Label>
+						</children>
+					</HBox>
+					<HBox spacing="8">
+						<children>
+							<Label text="max lookback"></Label>
+							<TextField fx:id="trainMaxLookback" text="24"></TextField>
+							<Label text="months"></Label>
+						</children>
+					</HBox>
+					<HBox spacing="8">
+						<children>
+							<Label text="reps"></Label>
+							<TextField fx:id="trainSampleCount" text="30"></TextField>
+						</children>
+					</HBox>
+					<HBox alignment="CENTER">
+						<children>
+							<Button fx:id="trainButton" text="train"></Button>
+						</children>
+					</HBox>
+				</VBox>
 			</children>
 		</HBox>
 	</children>

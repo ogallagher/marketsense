@@ -35,3 +35,13 @@ Toolbar Label {
 	-fx-font-weight: bold;
 	-fx-padding: 2 0 8 0; 
 }
+
+.h2 {
+	-fx-font-size: 20px;
+	-fx-padding: 2 0 4 0;
+}
+
+.h3 {
+	-fx-font-size: 16px;
+	-fx-padding: 2 0 4 0;
+}

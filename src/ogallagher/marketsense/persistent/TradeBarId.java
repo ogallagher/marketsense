@@ -6,6 +6,8 @@ import java.time.LocalDateTime;
 
 import javax.persistence.*;
 
+import ogallagher.twelvedata_client_java.TwelvedataInterface.BarInterval;
+
 /**
  * Composite key for {@link TradeBar}
  * 
@@ -27,13 +29,16 @@ public class TradeBarId implements Serializable {
 	private LocalDateTime datetime;
 	
 	public static final String DB_COL_WIDTH = "width";
-	BarWidthType width;
+	/**
+	 * Bar width string. See {@link BarInterval} for valid options.
+	 */
+	String width;
 	
 	public TradeBarId() {
-		this(new Security(), LocalDateTime.MIN, BarWidthType.DAY);
+		this(new Security(), LocalDateTime.MIN, BarInterval.DY_1);
 	}
 	
-	public TradeBarId(Security security, LocalDateTime datetime, BarWidthType width) {
+	public TradeBarId(Security security, LocalDateTime datetime, String width) {
 		this.security = security;
 		this.datetime = datetime;
 		this.width = width;

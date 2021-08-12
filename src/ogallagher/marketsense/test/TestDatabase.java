@@ -1,13 +1,11 @@
 package ogallagher.marketsense.test;
 
 import java.time.LocalDateTime;
-import java.util.LinkedList;
 import java.util.List;
 
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
 
-import ogallagher.marketsense.persistent.BarWidthType;
 import ogallagher.marketsense.persistent.Person;
 import ogallagher.marketsense.persistent.Security;
 import ogallagher.marketsense.persistent.SecurityId;
@@ -16,6 +14,7 @@ import ogallagher.marketsense.persistent.TradeBar;
 import ogallagher.marketsense.persistent.TrainingSession;
 import ogallagher.marketsense.persistent.TrainingSessionType;
 import ogallagher.temp_fx_logger.System;
+import ogallagher.twelvedata_client_java.TwelvedataInterface.BarInterval;
 
 public class TestDatabase extends Test {
 	private EntityManager dbManager;
@@ -85,7 +84,15 @@ public class TestDatabase extends Test {
 		int i=0;
 		for (int p=0; p<people.length; p++) {
 			for (int s=0; s<sessionsPerPerson; s++) {
-				dummySessions[i] = new TrainingSession(people[p],TrainingSessionType.TBD, i);
+				dummySessions[i] = new TrainingSession(
+					people[p],
+					TrainingSessionType.TBD, 
+					new Security(), 
+					BarInterval.DY_1, 
+					10, 
+					15, 
+					2
+				);
 				i++;
 			}
 		}
@@ -177,7 +184,7 @@ public class TestDatabase extends Test {
 		int i=0;
 		for (int s=0; s<securities.length; s++) {
 			for (int b=0; b<barsPerSecurity; b++) {
-				dummyBars[i] = new TradeBar(securities[s],LocalDateTime.now().minusMinutes(b),BarWidthType.DAY,i,i,i,i);
+				dummyBars[i] = new TradeBar(securities[s],LocalDateTime.now().minusMinutes(b),BarInterval.DY_1,i,i,i,i);
 				i++;
 			}
 		}
