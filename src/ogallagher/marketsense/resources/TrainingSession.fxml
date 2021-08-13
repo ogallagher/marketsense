@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.net.URL?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.control.Slider?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.Button?>
+
+<VBox xmlns:fx="http://javafx.com/fxml/1" spacing="8" alignment="TOP_CENTER" fillWidth="true">
+	<stylesheets>
+		<URL value="@TrainingSession.css" />
+	</stylesheets>
+	
+	<children>
+		<!-- title bar -->
+		<HBox spacing="8" alignment="CENTER">
+			<children>
+				<Label fx:id="title" text="Training Session" styleClass="h1"></Label>
+				
+				<Button fx:id="quit" text="quit" styleClass="btn-cancel"></Button>
+			</children>
+		</HBox>
+		
+		<!-- session config -->
+		<GridPane hgap="8" vgap="8">
+			<children>
+				<!-- row 0 -->
+				<Label text="security" GridPane.columnIndex="0" GridPane.rowIndex="0"></Label>
+				<Label fx:id="security" styleClass="data-value" GridPane.columnIndex="1" GridPane.rowIndex="0"></Label>
+				
+				<Label text="sample" GridPane.columnIndex="2" GridPane.rowIndex="0"></Label>
+				<Label fx:id="sampleId" styleClass="data-value" text="1" GridPane.columnIndex="3" GridPane.rowIndex="0"></Label>
+				
+				<Label text="reps" GridPane.columnIndex="4" GridPane.rowIndex="0"></Label>
+				<Label fx:id="sampleCount" styleClass="data-value" GridPane.columnIndex="5" GridPane.rowIndex="0"></Label>
+				
+				<!-- row 1 -->
+				<Label text="trade bars" GridPane.columnIndex="0" GridPane.rowIndex="1"></Label>
+				<Label fx:id="sampleSize" styleClass="data-value" GridPane.columnIndex="1" GridPane.rowIndex="1"></Label>
+				
+				<Label text="trade bar width" GridPane.columnIndex="2" GridPane.rowIndex="1"></Label>
+				<Label fx:id="barWidth" styleClass="data-value" GridPane.columnIndex="4" GridPane.rowIndex="1"></Label>
+				
+				<!-- row 2 -->
+			</children>
+		</GridPane>
+		
+		<!-- training -->
+		<HBox fx:id="trainingControls" spacing="8" alignment="CENTER" fillHeight="true">
+			<children>
+				<!-- col 1 -->
+				<VBox spacing="8" alignment="CENTER_LEFT">
+					<children>
+						<Button fx:id="playSound" text="play sound"></Button>
+						
+						<Label text="guess color"></Label>
+						<HBox>
+							<children>
+								<Slider 
+									fx:id="colorGuess" 
+									min="0" max="1" value="0.5"
+									snapToTicks="true" showTickMarks="true" showTickLabels="false" majorTickUnit="0.1" 
+									orientation="HORIZONTAL">
+								</Slider>
+								
+								<Region fx:id="colorGuessTile" prefWidth="64" prefHeight="64"></Region>
+								
+								<Button fx:id="colorGuessSubmit" text="submit"></Button>
+							</children>
+						</HBox>
+						
+						<Button fx:id="nextSample" text="next sample" disable="true"></Button>
+					</children>
+				</VBox>
+				
+				<!-- col 2 -->
+				<VBox spacing="8" alignment="CENTER_RIGHT" fillWidth="true">
+					<children>
+						<GridPane hgap="8" vgap="8">
+							<children>
+								<Label text="score" GridPane.columnIndex="0" GridPane.rowIndex="0"></Label>
+								<Label fx:id="scoreLast" text="0.0" styleClass="data-value" GridPane.columnIndex="1" GridPane.rowIndex="0"></Label>
+								<Label text="\%" GridPane.columnIndex="2" GridPane.rowIndex="0"></Label>
+								
+								<Label text="average score" GridPane.columnIndex="0" GridPane.rowIndex="1"></Label>
+								<Label fx:id="score" text="0.0" styleClass="data-value" GridPane.columnIndex="1" GridPane.rowIndex="1"></Label>
+								<Label text="\%" GridPane.columnIndex="2" GridPane.rowIndex="1"></Label>
+							</children>
+						</GridPane>
+						
+						<Label text="true color"></Label>
+						<HBox>
+							<children>
+								<Slider 
+									fx:id="colorTrue" disable="true"
+									min="0" max="1" value="0.5" orientation="HORIZONTAL">
+								</Slider>
+								
+								<Region fx:id="colorTrueTile" prefWidth="64" prefHeight="64"></Region>
+							</children>
+						</HBox>
+					</children>
+				</VBox>
+			</children>
+		</HBox>
+	</children>
+</VBox>
+

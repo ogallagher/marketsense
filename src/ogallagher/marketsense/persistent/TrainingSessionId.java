@@ -48,6 +48,10 @@ public class TrainingSessionId implements Serializable {
 		lastStart = start;
 	}
 	
+	public LocalDateTime getStart() {
+		return start;
+	}
+	
 	@Override
 	public int hashCode() {
 		return toString().hashCode();

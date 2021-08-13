@@ -235,7 +235,13 @@ public class MarketSynth {
 		for (float s=0; s<soundBuffer.capacity(); s++) {
 			if (s % noteSampleSize == 0) {
 				// move pitch to next note
-				pitch = pitchCenter + (marketData[note++]-0.5) * pitchRadius;
+				
+				if (note < marketData.length-1) {
+					note++;
+				}
+				// else if note index is beyond market data, extend last note
+				
+				pitch = pitchCenter + (marketData[note]-0.5) * pitchRadius;
 				
 				// create timbre matching input data shape with new length
 				int periodSampleSize = (int) (rate / pitch);

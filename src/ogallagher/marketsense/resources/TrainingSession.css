@@ -1,0 +1,33 @@
+/*
+
+Owen Gallagher
+2021-08-12
+
+*/
+
+.data-value {
+	-fx-font-weight: bold;
+}
+
+Button {
+	-fx-background-color: #435cff; 
+	-fx-text-fill: #ffffff;
+}
+
+Button:hover {
+	-fx-background-color: #140092;
+}
+
+Button .btn-cancel {
+	-fx-background-color: #ee0000;
+}
+
+Button .btn-cancel {
+	-fx-background-color: #bb0000;
+}
+
+Region {
+	-fx-border-color: #000000;
+	-fx-border-style: solid;
+	-fx-border-width: 2;
+}

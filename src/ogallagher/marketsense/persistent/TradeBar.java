@@ -39,6 +39,22 @@ public class TradeBar {
 		this.close = close;
 	}
 	
+	public float getOpen() {
+		return open;
+	}
+	
+	public float getHigh() {
+		return high;
+	}
+	
+	public float getLow() {
+		return low;
+	}
+	
+	public float getClose() {
+		return close;
+	}
+	
 	@Override
 	public String toString() {
 		return "TradeBar(id=" + id + ")";
