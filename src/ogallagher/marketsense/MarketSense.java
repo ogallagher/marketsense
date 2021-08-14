@@ -60,6 +60,7 @@ import ogallagher.twelvedata_client_java.TwelvedataInterface.BarInterval;
 import ogallagher.twelvedata_client_java.TwelvedataInterface.SecuritySet;
 import ogallagher.marketsense.persistent.Person;
 import ogallagher.marketsense.persistent.Security;
+import ogallagher.marketsense.persistent.SecurityId;
 import ogallagher.marketsense.persistent.SecurityType;
 import ogallagher.marketsense.persistent.TrainingSession;
 import ogallagher.marketsense.persistent.TrainingSessionType;
@@ -739,33 +740,53 @@ public class MarketSense {
 	 * Open a new training session using the parameters selected in the new training session form.
 	 */
 	public static boolean newTrainingSession(String symbol, String barWidth, int sampleSize, int sampleCount, int maxLookbackMonths) {
-		// use twelvedata api lookup to determine security specs from symbol
-		SecuritySet securitySet = tdclient.symbolLookup(symbol, 10);
-		SecuritySet.Security tdSecurity = null;
+		Security security = null;
 		
-		for (SecuritySet.Security candidate : securitySet.data) {
-			if (candidate.symbol.equals(symbol) && (candidate.exchange.equals("NYSE") || candidate.exchange.equals("NASDAQ"))) {
-				tdSecurity = candidate;
-				break;
+		// try to fetch security from db
+		Security dbSecurity = (Security) 
+		dbManager.createQuery(
+			"select s from " + Security.DB_TABLE + " s " + 
+			"where s." + Security.DB_COL_ID + "." + SecurityId.DB_COL_SYMBOL + " = :symbol"
+		)
+		.setParameter("symbol", symbol)
+		.setMaxResults(1)
+		.getSingleResult();
+		
+		if (dbSecurity != null) {
+			security = dbSecurity;
+		}
+		else {
+			// try to use twelvedata api lookup to determine security specs from symbol if not in db
+			SecuritySet securitySet = tdclient.symbolLookup(symbol, 10);
+			SecuritySet.Security tdSecurity = null;
+			
+			for (SecuritySet.Security candidate : securitySet.data) {
+				if (candidate.symbol.equals(symbol) && (candidate.exchange.equals("NYSE") || candidate.exchange.equals("NASDAQ"))) {
+					tdSecurity = candidate;
+					break;
+				}
+				else {
+					System.out.println("skip candidate " + candidate);
+				}
 			}
-			else {
-				System.out.println("skip candidate " + candidate);
+			
+			if (tdSecurity != null) {
+				SecurityType securityType = SecurityType.STOCK;
+				switch (tdSecurity.instrument_type) {
+					case ogallagher.twelvedata_client_java.TwelvedataInterface.SecurityType.ETF:
+						securityType = SecurityType.ETF;
+						break;
+				
+					case ogallagher.twelvedata_client_java.TwelvedataInterface.SecurityType.COMMON_STOCK:
+						securityType = SecurityType.STOCK;
+						break;
+				}
+				
+				security = new Security(tdSecurity.symbol, tdSecurity.exchange, securityType);
 			}
 		}
 		
-		if (tdSecurity != null) {
-			SecurityType securityType = SecurityType.STOCK;
-			switch (tdSecurity.instrument_type) {
-				case ogallagher.twelvedata_client_java.TwelvedataInterface.SecurityType.ETF:
-					securityType = SecurityType.ETF;
-					break;
-			
-				case ogallagher.twelvedata_client_java.TwelvedataInterface.SecurityType.COMMON_STOCK:
-					securityType = SecurityType.STOCK;
-					break;
-			}
-			Security security = new Security(tdSecurity.symbol, tdSecurity.exchange, securityType);
-			
+		if (security != null) {
 			TrainingSession session = new TrainingSession(
 				person, TrainingSessionType.TBD, 
 				security, barWidth, sampleSize, sampleCount, maxLookbackMonths

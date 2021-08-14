@@ -3,12 +3,16 @@ package ogallagher.marketsense;
 import java.awt.Color;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.persistence.EntityManager;
+import javax.persistence.Query;
 import javax.sound.sampled.AudioInputStream;
 
 import ogallagher.marketsense.persistent.Security;
+import ogallagher.marketsense.persistent.SecurityId;
 import ogallagher.marketsense.persistent.TradeBar;
+import ogallagher.marketsense.persistent.TradeBarId;
 import ogallagher.twelvedata_client_java.TwelvedataInterface.BarInterval;
 
 /**
@@ -72,19 +76,34 @@ public class MarketSample {
 	/**
 	 * Fetch the required market data from the database and create the resulting sound and color.
 	 */
+	@SuppressWarnings("unchecked")
 	public void prepare(EntityManager dbManager, MarketSynth marketSynth) {
-		// fetch market data from database TODO
+		// fetch market data from database
+		Query query = dbManager.createQuery(
+			String.format(
+				"select t from %1$s t " + 
+				"where t.%2$s = :securitySymbol and t.%3$s = :securityExchange and t.%4$s = :barWidth " +
+				"and t.%5$s >= :start and t.%5$s <= :end " +
+				"order by t.%5$s asc",
+				TradeBar.DB_TABLE,
+				TradeBar.DB_COMPCOL_ID + "." + TradeBarId.DB_COL_SECURITY + "." + Security.DB_COL_ID + "." + SecurityId.DB_COL_SYMBOL,
+				TradeBar.DB_COMPCOL_ID + "." + TradeBarId.DB_COL_SECURITY + "." + Security.DB_COL_ID + "." + SecurityId.DB_COL_EXCHANGE,
+				TradeBar.DB_COMPCOL_ID + "." + TradeBarId.DB_COL_WIDTH,
+				TradeBar.DB_COMPCOL_ID + "." + TradeBarId.DB_COL_DATETIME
+			)
+		);
+		query.setParameter("securitySymbol", security.getSymbol());
+		query.setParameter("securityExchange", security.getExchange());
+		query.setParameter("barWidth", barWidth);
+		query.setParameter("start", start);
+		query.setParameter("end", BarInterval.offsetBars(end, barWidth, 1)); // note this includes one future bar
+		
+		// set bars
 		bars.clear();
+		bars.addAll((List<TradeBar>) query.getResultList());
 		
-		LocalDateTime step = start;
-		while (step.compareTo(end) <= 0) {
-			float close = (float) Math.random() * 100;
-			bars.add(new TradeBar(security, step, barWidth, 0, 0, 0, close));
-			step = BarInterval.offsetBars(step, barWidth, 1);
-		}
-		
-		float close = (float) Math.random() * 100;
-		future = new TradeBar(security, step, barWidth, 0, 0, 0, close);
+		// set future
+		future = bars.remove(bars.size()-1);
 		
 		// analyze future movement
 		float last = bars.get(bars.size()-1).getClose();
