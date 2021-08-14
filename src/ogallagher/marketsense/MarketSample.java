@@ -118,7 +118,7 @@ public class MarketSample {
 	 * @return Score.
 	 */
 	public double evalGuess(double guess) {
-		double score = 1 - (Math.abs(guess - futureMovement) / 2);
+		double score = 1 - Math.abs(guess - futureMovement);
 		
 		return score;
 	}

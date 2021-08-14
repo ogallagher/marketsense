@@ -18,6 +18,7 @@ import ogallagher.twelvedata_client_java.TwelvedataInterface.BarInterval;
 public class TradeBarId implements Serializable {
 	private static final long serialVersionUID = -4739218606014682561L;
 	
+	public static final String DB_COL_SECURITY = "security";
 	public static final String DB_COL_SEC_SYMBOL = "securitySymbol";
 	public static final String DB_COL_SEC_EXCHANGE = "securityExchange";
 	@ManyToOne
@@ -26,6 +27,7 @@ public class TradeBarId implements Serializable {
 		@JoinColumn(name=DB_COL_SEC_EXCHANGE, referencedColumnName=SecurityId.DB_COL_EXCHANGE)
 	})
 	private Security security;
+	public static final String DB_COL_DATETIME = "datetime";
 	private LocalDateTime datetime;
 	
 	public static final String DB_COL_WIDTH = "width";
@@ -42,6 +44,10 @@ public class TradeBarId implements Serializable {
 		this.security = security;
 		this.datetime = datetime;
 		this.width = width;
+	}
+	
+	public LocalDateTime getDatetime() {
+		return datetime;
 	}
 	
 	@Override

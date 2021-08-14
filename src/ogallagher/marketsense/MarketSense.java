@@ -773,12 +773,21 @@ public class MarketSense {
 			
 			System.out.println("starting a new training session " + session);
 			
-			Platform.runLater(new MarketSenseGUI.ShowTrainingSession(session));
+			// prepare the database
+			if (session.collectMarketUniverse(dbManager,tdclient)) {
+				System.out.println("market data universe acquired for lookback of " + session.getMaxLookbackMonths() + " months");
+				
+				// show training session interface
+				Platform.runLater(new MarketSenseGUI.ShowTrainingSession(session));
+			}
+			else {
+				System.out.println("ERROR failed to creake market data universe for training session");
+			}
 			
 			return true;
 		}
 		else {
-			System.out.println("failed to find security " + symbol + " for training session");
+			System.out.println("ERROR failed to find security " + symbol + " for training session");
 			return false;
 		}
 	}
