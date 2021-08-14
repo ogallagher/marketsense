@@ -582,6 +582,15 @@ public class MarketSense {
 							
 							// reset color guess
 							colorGuess.setValue(0.5);
+							
+							// reset true color
+							((Slider) sessionRoot.lookup("#colorTrue")).setValue(0.5);
+							
+							((Region) sessionRoot.lookup("#colorTrueTile")).setBackground(new Background(new BackgroundFill(
+								javafx.scene.paint.Color.WHITE, 
+								CornerRadii.EMPTY, 
+								Insets.EMPTY
+							)));
 						}
 						// else, training session already complete
 						else {
