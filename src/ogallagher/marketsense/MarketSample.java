@@ -46,6 +46,8 @@ public class MarketSample {
 	 */
 	private Color color;
 	
+	private FutureMovementFormula futureMovementFormula = FutureMovementFormula.DELTA_SAMPLE_RANGE;
+	
 	public static Color valueToColor(double value, Color lowColor, Color highColor) {
 		double antivalue = 1-value;
 		
@@ -106,13 +108,46 @@ public class MarketSample {
 		future = bars.remove(bars.size()-1);
 		
 		// analyze future movement
-		float last = bars.get(bars.size()-1).getClose();
-		float future = this.future.getClose();
-		
-		// constrain to -100% .. 100% of last price, normalize to 0 .. 1
-		futureMovement = (((future - last) / last) + 1) / 2;
-		if (futureMovement > 1) {
-			futureMovement = 1;
+		switch (futureMovementFormula) {
+			case PCT_LAST_PX:
+				float last = bars.get(bars.size()-1).getClose();
+				float future = this.future.getClose();
+				
+				// constrain to -1 .. 1 proportion of last price, normalize to 0 .. 1
+				futureMovement = (((future - last) / last) + 1) / 2;
+				if (futureMovement > 1) {
+					futureMovement = 1;
+				}
+				break;
+				
+			case DELTA_SAMPLE_RANGE:
+				float deltaMin = Float.POSITIVE_INFINITY;
+				float deltaMax = Float.NEGATIVE_INFINITY;
+				
+				float a = bars.get(0).getClose();
+				for (int i=1; i<bars.size(); i++) {
+					float b = bars.get(i).getClose();
+					float d = b-a;
+					
+					if (d < deltaMin) {
+						deltaMin = d;
+					}
+					if (d > deltaMax) {
+						deltaMax = d;
+					}
+					
+					a = b;
+				}
+				
+				// normalize future-last delta between min and max
+				futureMovement = (this.future.getClose()-a - deltaMin) / (deltaMax-deltaMin);
+				if (futureMovement > 1) {
+					futureMovement = 1;
+				}
+				if (futureMovement < 0) {
+					futureMovement = 0;
+				}
+				break;
 		}
 		
 		// extract raw market datapoints
@@ -157,5 +192,16 @@ public class MarketSample {
 	@Override
 	public String toString() {
 		return "MarketSample(security=" + security + ", start=" + start + ", end=" + end + ")";
+	}
+	
+	public static enum FutureMovementFormula {
+		/**
+		 * Proportional difference from last px in sample.
+		 */
+		PCT_LAST_PX,
+		/**
+		 * Normalize within range of price differences for all neighbors in the sample.
+		 */
+		DELTA_SAMPLE_RANGE
 	}
 }

@@ -17,6 +17,7 @@ import java.util.Properties;
 import java.util.TreeSet;
 
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
 import javax.persistence.Persistence;
 import javax.sound.sampled.AudioInputStream;
 
@@ -63,6 +64,7 @@ import ogallagher.marketsense.persistent.Security;
 import ogallagher.marketsense.persistent.SecurityId;
 import ogallagher.marketsense.persistent.SecurityType;
 import ogallagher.marketsense.persistent.TrainingSession;
+import ogallagher.marketsense.persistent.TrainingSessionId;
 import ogallagher.marketsense.persistent.TrainingSessionType;
 import ogallagher.marketsense.test.Test;
 import ogallagher.marketsense.test.TestDatabase;
@@ -263,7 +265,9 @@ public class MarketSense {
 		
 		public static class ShowDashboard implements Runnable {
 			private static ComboBox<String> symbolDropdown = null;
+			private static ListView<TrainingSession> trainingSessionsList = null;
 			
+			@SuppressWarnings("unchecked")
 			@Override
 			public void run() {
 				Scene mainScene = mainWindow.getScene();
@@ -297,7 +301,9 @@ public class MarketSense {
 						}
 					});
 					
-					// fill in training session history TODO
+					// fill in training session history
+					trainingSessionsList = (ListView<TrainingSession>) mainScene.lookup("#sessionHistory");
+					loadTrainingSessions(ShowTrainingSessions.class, true);
 					
 					// fill in new training session form
 					loadNewTrainingSessionForm(dashboard);
@@ -397,7 +403,28 @@ public class MarketSense {
 						new ArrayList<String>(
 							// sort with TreeSet constructor
 							new TreeSet<String>(symbols)
-						)));
+						)
+					));
+				}
+			}
+			
+			public static class ShowTrainingSessions implements Runnable {
+				private List<TrainingSession> sessions;
+				
+				public ShowTrainingSessions(List<TrainingSession> sessions) {
+					this.sessions = sessions;
+				}
+				
+				@Override
+				public void run() {
+					ObservableList<TrainingSession> observableSessions = FXCollections.observableList(sessions);
+					trainingSessionsList.setItems(observableSessions);
+					trainingSessionsList.setCellFactory(new Callback<ListView<TrainingSession>, ListCell<TrainingSession>>() {
+						@Override
+						public ListCell<TrainingSession> call(ListView<TrainingSession> param) {
+							return new TrainingSession.TrainingSessionListCell();
+						}
+					});
 				}
 			}
 		}
@@ -719,6 +746,34 @@ public class MarketSense {
 		Platform.runLater(new MarketSenseGUI.ShowDashboard());
 	}
 	
+	public static <T extends Runnable> void loadTrainingSessions(Class<T> OnLoad, boolean guiThread) {
+		System.out.println("loading people from local db");
+		
+		@SuppressWarnings("unchecked")
+		List<TrainingSession> sessions = (List<TrainingSession>) dbManager
+		.createQuery(
+			"select t from " + TrainingSession.DB_TABLE + " t " + 
+			"where t." + TrainingSession.DB_COL_ID + "." + TrainingSessionId.DB_COL_PERSON + "." + Person.DB_COL_USERNAME + " = :username"
+		)
+		.setParameter("username", person.getUsername())
+		.getResultList();
+		System.out.println("INFO loaded " + sessions.size() + " training sessions from db");
+		
+		try {
+			Runnable runnable = OnLoad.getDeclaredConstructor(List.class).newInstance(sessions);
+			
+			if (guiThread) {
+				Platform.runLater(runnable);
+			}
+			else {
+				new Thread(runnable).start();
+			}
+		}
+		catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e) {
+			System.out.println("error loading training sessions: " + e.getMessage());
+		}
+	}
+	
 	/**
 	 * If signed in, log out by removing the reference to that person object. Then, return to the
 	 * login form.
@@ -743,19 +798,18 @@ public class MarketSense {
 		Security security = null;
 		
 		// try to fetch security from db
-		Security dbSecurity = (Security) 
-		dbManager.createQuery(
-			"select s from " + Security.DB_TABLE + " s " + 
-			"where s." + Security.DB_COL_ID + "." + SecurityId.DB_COL_SYMBOL + " = :symbol"
-		)
-		.setParameter("symbol", symbol)
-		.setMaxResults(1)
-		.getSingleResult();
-		
-		if (dbSecurity != null) {
+		try {
+			Security dbSecurity = (Security) dbManager.createQuery(
+				"select s from " + Security.DB_TABLE + " s " + 
+				"where s." + Security.DB_COL_ID + "." + SecurityId.DB_COL_SYMBOL + " = :symbol"
+			)
+			.setParameter("symbol", symbol)
+			.setMaxResults(1)
+			.getSingleResult();
+			
 			security = dbSecurity;
 		}
-		else {
+		catch (NoResultException e) {
 			// try to use twelvedata api lookup to determine security specs from symbol if not in db
 			SecuritySet securitySet = tdclient.symbolLookup(symbol, 10);
 			SecuritySet.Security tdSecurity = null;
@@ -783,6 +837,11 @@ public class MarketSense {
 				}
 				
 				security = new Security(tdSecurity.symbol, tdSecurity.exchange, securityType);
+				
+				// add security to db
+				dbManager.getTransaction().begin();
+				dbManager.persist(security);
+				dbManager.getTransaction().commit();
 			}
 		}
 		

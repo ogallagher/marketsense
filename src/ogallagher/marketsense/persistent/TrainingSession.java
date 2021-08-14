@@ -30,6 +30,7 @@ import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.scene.control.ListCell;
 import ogallagher.marketsense.MarketSample;
 import ogallagher.marketsense.MarketSynth;
 import ogallagher.twelvedata_client_java.TwelvedataClient;
@@ -47,6 +48,7 @@ import ogallagher.twelvedata_client_java.TwelvedataInterface.TimeSeries;
 public class TrainingSession {
 	public static final String DB_TABLE = "TrainingSession";
 	
+	public static final String DB_COL_ID = "id";
 	@EmbeddedId
 	private TrainingSessionId id;
 	
@@ -393,5 +395,19 @@ public class TrainingSession {
 	@Override
 	public String toString() {
 		return "TrainingSession(id=" + id + ", type=" + type + ", security=" + security + ")";
+	}
+	
+	public static class TrainingSessionListCell extends ListCell<TrainingSession> {
+		@Override
+		public void updateItem(TrainingSession item, boolean empty) {
+			super.updateItem(item, empty);
+			
+			if (item != null) {
+				setText(
+					item.security.getSymbol() + " --- " + 
+					((float) (item.score.get()*100)) + "%"
+				);
+			}
+		}
 	}
 }
