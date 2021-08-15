@@ -2,13 +2,16 @@ package ogallagher.marketsense;
 
 import java.awt.Color;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.text.DecimalFormat;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -806,6 +809,14 @@ public class MarketSense {
 	public static boolean newTrainingSession(String symbol, String barWidth, int sampleSize, int sampleCount, int maxLookbackMonths) {
 		Security security = null;
 		
+		// commit training session config to properties file
+		properties.setProperty("train_symbol", symbol);
+		properties.setProperty("train_bar_width", barWidth);
+		properties.setProperty("train_sample_size", Integer.toString(sampleSize));
+		properties.setProperty("train_sample_count", Integer.toString(sampleCount));
+		properties.setProperty("train_lookback_max_months", Integer.toString(maxLookbackMonths));
+		saveProperties();
+		
 		// try to fetch security from db
 		try {
 			Security dbSecurity = (Security) dbManager.createQuery(
@@ -933,7 +944,6 @@ public class MarketSense {
 	
 	private static Properties getProperties() throws FileNotFoundException {
 		Properties properties = new Properties();
-		
 		FileInputStream istream = new FileInputStream(PROPERTIES_FILE.getPath());
 		
 		try {
@@ -942,6 +952,20 @@ public class MarketSense {
 		} 
 		catch (IOException e) {
 			throw new FileNotFoundException("failed to read properties file " + PROPERTIES_FILE);
+		}
+	}
+	
+	private static void saveProperties() {
+		try {
+			new File(PROPERTIES_FILE.getPath()).createNewFile();
+			
+			String comments = 
+				"last updated by marketsense " + LocalDateTime.now();
+			
+			properties.store(new FileOutputStream(PROPERTIES_FILE.getPath()), comments);
+		} 
+		catch (IOException e) {
+			System.out.println("ERROR unable to save to properties file");
 		}
 	}
 }
