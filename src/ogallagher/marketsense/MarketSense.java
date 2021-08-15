@@ -77,7 +77,7 @@ import ogallagher.temp_fx_logger.System;
 /**
  * @author Owen Gallagher <github.com/ogallagher>
  * @since 9 June 2021
- * @version 0.0.3
+ * @version 0.1.0
  */
 public class MarketSense {
 	private static final String NAME = "MarketSense";

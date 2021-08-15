@@ -2,11 +2,19 @@
 
 Take advantage of the human brain's ability to process signals for pattern recognition and classification by creating a connection from raw data to the human senses, which are the inputs to the brain. Apply this connection to market data and prediction of future asset value.
 
+## Usage
+
+tbd
+
+## Development
+
+tbd
+
 ## Approach
 
 > Without having done any real research, below is the approach I'll follow for implementing a first prototype.
 
-The resulting program will be a sort of market analysis training, where the user repeatedly trains by listening to market data converted to sounds, guessing the corresponding color for that sound (which maps to future asset value), and comparing their guess to the actual color. Over time, the user's accuracy score should slowly improve to a point where they can predict future asset value from converted historical market data with high enough accuracy to trade with a proft.
+The resulting program will be a sort of market analysis training, where the user repeatedly trains by listening to market data converted to sounds, guessing the corresponding color for that sound (which maps to future asset value), and comparing their guess to the actual color. Over time, the user's accuracy score should slowly improve to a point where they can predict future asset value from converted historical market data with high enough accuracy to trade with a profit.
 
 ## Technologies
 
