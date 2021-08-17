@@ -24,8 +24,6 @@ import javax.persistence.NoResultException;
 import javax.persistence.Persistence;
 import javax.sound.sampled.AudioInputStream;
 
-import org.h2.command.dml.Set;
-
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.InvalidationListener;
@@ -75,39 +73,98 @@ import ogallagher.marketsense.test.TestMarketSynth;
 import ogallagher.temp_fx_logger.System;
 
 /**
- * @author Owen Gallagher <github.com/ogallagher>
+ * Main program entrypoint for marketsense.
+ * 
+ * @author <a href="https://github.com/ogallagher">Owen Gallagher</a>
  * @since 9 June 2021
- * @version 0.1.0
+ * @version {@value #VERSION}
  */
 public class MarketSense {
 	private static final String NAME = "MarketSense";
 	public static boolean runTests = false;
 	
+	/**
+	 * Program version string.
+	 */
+	public static final String VERSION = "0.1.0";
+	
+	/**
+	 * Path to program properties file.
+	 */
 	private static final URL PROPERTIES_FILE = MarketSense.class.getResource("resources/config.properties");
+	/**
+	 * Path to NYSE symbols list.
+	 */
 	private static final URL SYMBOLS_FILE_NYSE = MarketSense.class.getResource("resources/markets/NYSE_symbols_all.txt");
+	/**
+	 * Path to NASDAQ symbols list.
+	 */
 	private static final URL SYMBOLS_FILE_NASDAQ = MarketSense.class.getResource("resources/markets/NASDAQ_symbols_all.txt");
 	
+	/**
+	 * Program properties, loaded from the {@link #PROPERTIES_FILE properties file}.
+	 */
 	private static Properties properties;
 	
+	/**
+	 * Defines how float numeric values should be displayed, namely with a certain number of digits after
+	 * the decimal point. 
+	 */
 	public static final DecimalFormat FLOAT_FORMAT = new DecimalFormat(); 
 	
+	/**
+	 * Program properties key for a twelvedata api key.
+	 */
 	private static final String PROP_TWELVEDATA_API_KEY = "twelvedata_api_key";
+	/**
+	 * Program properties key for the name of the persistence unit, which should usually be left alone.
+	 */
 	private static final String PROP_PERSIST_UNIT = "persistence_unit";
 	
+	/**
+	 * Program properties key for whether to run unit tests prior to running the program.
+	 */
 	private static final String PROP_RUN_TESTS = "run_tests";
 	
+	/**
+	 * Program properties key for the default training session asset symbol.
+	 */
 	private static final String PROP_TRAIN_SYMBOL = "train_symbol";
+	/**
+	 * Program properties key for the default training session tradebar width.
+	 */
 	private static final String PROP_TRAIN_BAR_WIDTH = "train_bar_width";
+	/**
+	 * Program properties key for the default training session sample size.
+	 */
 	private static final String PROP_TRAIN_SAMPLE_SIZE = "train_sample_size";
+	/**
+	 * Program properties key for the default training session sample count.
+	 */
 	private static final String PROP_TRAIN_SAMPLE_COUNT = "train_sample_count";
+	/**
+	 * Program properties key for the default training session lookback, in months.
+	 */
 	private static final String PROP_TRAIN_LOOKBACK_MAX_MONTHS = "train_lookback_max_months";
 	
+	/**
+	 * The program twelvedata api client.
+	 */
 	private static TwelvedataClient tdclient = null;
 	
+	/**
+	 * The program database/persistence entity manager.
+	 */
 	public static EntityManager dbManager = null;
 	
+	/**
+	 * The current active account.
+	 */
 	private static Person person = null;
 	
+	/**
+	 * The program market data sound synthesizer.
+	 */
 	private static MarketSynth marketSynth = null;
 	
 	static {
