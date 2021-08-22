@@ -229,7 +229,7 @@ public class MarketSynth {
 		
 		double[] timbre = null;
 		double pitch = PITCH_MIN;
-		int note = 0;
+		int note = -1;
 		int timbreSample = 0;
 		
 		for (float s=0; s<soundBuffer.capacity(); s++) {
