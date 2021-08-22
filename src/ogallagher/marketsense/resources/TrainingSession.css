@@ -33,7 +33,5 @@ Button .btn-cancel {
 }
 
 #sampleGraph {
-	-fx-border-color: #000000;
-	-fx-border-style: solid;
-	-fx-border-width: 2;
+	-fx-background-color: #dddddd;
 }

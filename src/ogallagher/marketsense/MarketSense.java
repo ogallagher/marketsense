@@ -61,6 +61,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
+import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 
@@ -636,6 +637,9 @@ public class MarketSense {
 				// next sample (enabled on color guess)
 				Button nextSample = (Button) sessionRoot.lookup("#nextSample");
 				nextSample.setDisable(false);
+				
+				BorderPane graphContainer = (BorderPane) sessionRoot.lookup("#sampleGraph");
+				graphContainer.setPadding(Insets.EMPTY);
 				nextSample.setOnAction(new EventHandler<ActionEvent>() {
 					@Override
 					public void handle(ActionEvent event) {
@@ -666,9 +670,12 @@ public class MarketSense {
 							// reset market data graph
 							CartesianGraph sampleGraph = loadSampleGraph(sample, 600, 350);
 							
-							BorderPane graphContainer = (BorderPane) sessionRoot.lookup("#sampleGraph");
 							graphContainer.getChildren().clear();
 							graphContainer.setCenter(sampleGraph.getCanvas());
+							graphContainer.setClip(new Rectangle(
+								sampleGraph.getCanvas().getPrefWidth(), 
+								sampleGraph.getCanvas().getPrefHeight()
+							));
 							
 							// TODO fix CartesianGraph.layout
 							// sampleGraph.layout();
@@ -767,8 +774,9 @@ public class MarketSense {
 					p = points.get(i);
 					x = p.getX(); y = p.getY();
 					points.set(i, new Point2D(
-						(x-minX)/(maxX-minX)*(graphWidth-50),
-						(y-minY)/(maxY-minY)*(graphHeight-50)
+						(x-minX)/(maxX-minX) * (graphWidth-50),
+						// 1 - ... flips y axis
+						(1 - (y-minY)/(maxY-minY)) * (graphHeight-50)
 					));
 				}
 				
