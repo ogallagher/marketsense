@@ -26,7 +26,13 @@ Button .btn-cancel {
 	-fx-background-color: #bb0000;
 }
 
-Region {
+.color-tile {
+	-fx-border-color: #000000;
+	-fx-border-style: solid;
+	-fx-border-width: 2;
+}
+
+#sampleGraph {
 	-fx-border-color: #000000;
 	-fx-border-style: solid;
 	-fx-border-width: 2;

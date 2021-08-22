@@ -13,8 +13,10 @@ import java.net.URL;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
 import java.util.TreeSet;
@@ -23,6 +25,9 @@ import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.Persistence;
 import javax.sound.sampled.AudioInputStream;
+
+import com.fxgraph.cells.CartesianPoint;
+import com.fxgraph.graph.CartesianGraph;
 
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -35,6 +40,7 @@ import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
+import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -51,6 +57,7 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
@@ -64,6 +71,7 @@ import ogallagher.marketsense.persistent.Person;
 import ogallagher.marketsense.persistent.Security;
 import ogallagher.marketsense.persistent.SecurityId;
 import ogallagher.marketsense.persistent.SecurityType;
+import ogallagher.marketsense.persistent.TradeBar;
 import ogallagher.marketsense.persistent.TrainingSession;
 import ogallagher.marketsense.persistent.TrainingSessionId;
 import ogallagher.marketsense.persistent.TrainingSessionType;
@@ -560,7 +568,7 @@ public class MarketSense {
 					loadControls(sessionRoot);
 					
 					// prepare first sample
-					session.nextSample(dbManager, marketSynth);
+					((Button) sessionRoot.lookup("#nextSample")).fire();
 				} 
 				catch (IOException e) {
 					System.out.println("failed to load training session: " + e.getMessage());
@@ -599,6 +607,7 @@ public class MarketSense {
 				playSound.setOnAction(new EventHandler<ActionEvent>() {
 					@Override
 					public void handle(ActionEvent event) {
+						System.out.println(session.getSample());
 						AudioInputStream sound = session.getSample().getSound();
 						marketSynth.playback(sound, 1);
 					}
@@ -626,11 +635,13 @@ public class MarketSense {
 				
 				// next sample (enabled on color guess)
 				Button nextSample = (Button) sessionRoot.lookup("#nextSample");
+				nextSample.setDisable(false);
 				nextSample.setOnAction(new EventHandler<ActionEvent>() {
 					@Override
 					public void handle(ActionEvent event) {
 						// next sample
-						if (session.nextSample(dbManager, marketSynth) != null) {
+						MarketSample sample = session.nextSample(dbManager, marketSynth);
+						if (sample != null) {
 							// reset last score
 							((Label) sessionRoot.lookup("#scoreLast")).setText("0.0");
 							
@@ -651,6 +662,16 @@ public class MarketSense {
 								CornerRadii.EMPTY, 
 								Insets.EMPTY
 							)));
+							
+							// reset market data graph
+							CartesianGraph sampleGraph = loadSampleGraph(sample, 600, 350);
+							
+							BorderPane graphContainer = (BorderPane) sessionRoot.lookup("#sampleGraph");
+							graphContainer.getChildren().clear();
+							graphContainer.setCenter(sampleGraph.getCanvas());
+							
+							// TODO fix CartesianGraph.layout
+							// sampleGraph.layout();
 						}
 						// else, training session already complete
 						else {
@@ -701,6 +722,63 @@ public class MarketSense {
 				});
 				
 				System.out.println("DEBUG loaded session controls");
+			}
+			
+			/**
+			 * Load a managed visual graph for the given market data sample. Note that as of 2021-08-21 the
+			 * {@code CartesianGraph} doesn't allow for flipping the y axis, so positive is down. Also, 
+			 * {@code CartesianGraph.layout} isn't working right, so for now viewport adjustment is done by
+			 * altering the points' coordinates.
+			 * 
+			 * @param sample Market data sample.
+			 * @return The graph instance, whose canvas can be loaded into the gui.
+			 */
+			private CartesianGraph loadSampleGraph(MarketSample sample, int graphWidth, int graphHeight) {
+				CartesianGraph graph = new CartesianGraph(CartesianGraph.PlotMode.CONNECTED_POINTS, graphWidth, graphHeight);
+				graph.getUseViewportGestures().set(false);
+				graph.getUseNodeGestures().set(false);
+				
+				List<Point2D> points = new LinkedList<>();
+				int i=0;
+				double minY = Double.MAX_VALUE, maxY = Double.MIN_VALUE, minX = Double.MAX_VALUE, maxX = Double.MIN_VALUE;
+				double x, y;
+				Point2D p;
+				for (TradeBar bar : sample.getBars()) {
+					p = new Point2D(i++, bar.getClose());
+					x = p.getX(); y = p.getY();
+					
+					if (x < minX) {
+						minX = x;
+					}
+					if (x > maxX) {
+						maxX = x;
+					}
+					if (y < minY) {
+						minY = y;
+					}
+					if (y > maxY) {
+						maxY = y;
+					}
+					
+					points.add(p);
+				}
+				
+				for (i=0; i<points.size(); i++) {
+					p = points.get(i);
+					x = p.getX(); y = p.getY();
+					points.set(i, new Point2D(
+						(x-minX)/(maxX-minX)*(graphWidth-50),
+						(y-minY)/(maxY-minY)*(graphHeight-50)
+					));
+				}
+				
+				graph.addDataset(
+					points, 
+					"sample " + session.getSampleIdProperty().get(), 
+					5, CartesianPoint.BulletType.CIRCLE, javafx.scene.paint.Color.CRIMSON
+				);
+				
+				return graph;
 			}
 		}
 	}

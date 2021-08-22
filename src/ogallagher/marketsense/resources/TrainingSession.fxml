@@ -9,6 +9,8 @@
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.BorderPane?>
 
 <VBox xmlns:fx="http://javafx.com/fxml/1" spacing="8" alignment="TOP_CENTER" fillWidth="true">
 	<stylesheets>
@@ -67,13 +69,13 @@
 									orientation="HORIZONTAL">
 								</Slider>
 								
-								<Region fx:id="colorGuessTile" prefWidth="64" prefHeight="64"></Region>
+								<Region fx:id="colorGuessTile" styleClass="color-tile" prefWidth="64" prefHeight="64"></Region>
 								
 								<Button fx:id="colorGuessSubmit" text="submit"></Button>
 							</children>
 						</HBox>
 						
-						<Button fx:id="nextSample" text="next sample" disable="true"></Button>
+						<Button fx:id="nextSample" text="next sample" disable="false"></Button>
 					</children>
 				</VBox>
 				
@@ -100,9 +102,11 @@
 									min="0" max="1" value="0.5" orientation="HORIZONTAL">
 								</Slider>
 								
-								<Region fx:id="colorTrueTile" prefWidth="64" prefHeight="64"></Region>
+								<Region fx:id="colorTrueTile" styleClass="color-tile" prefWidth="64" prefHeight="64"></Region>
 							</children>
 						</HBox>
+						
+						<BorderPane fx:id="sampleGraph"></BorderPane>
 					</children>
 				</VBox>
 			</children>

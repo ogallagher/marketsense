@@ -189,6 +189,10 @@ public class MarketSample {
 		return color;
 	}
 	
+	public List<TradeBar> getBars() {
+		return bars;
+	}
+	
 	@Override
 	public String toString() {
 		return "MarketSample(security=" + security + ", start=" + start + ", end=" + end + ")";

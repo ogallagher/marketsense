@@ -4,3 +4,6 @@
 [submodule "temp_fx_logger"]
 	path = temp_fx_logger
 	url = http://github.com/ogallagher/temp_fx_logger
+[submodule "fxgraph"]
+	path = fxgraph
+	url = https://github.com/ogallagher/fxgraph
