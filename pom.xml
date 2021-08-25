@@ -6,7 +6,7 @@
 
   <groupId>ogallagher</groupId>
   <artifactId>marketsense</artifactId>
-  <version>0.0.1</version>
+  <version>0.1.1</version>
 
   <name>marketsense</name>
   <url>https://github.com/ogallagher/marketsense</url>
@@ -27,16 +27,6 @@
     	<groupId>com.squareup.retrofit2</groupId>
     	<artifactId>converter-gson</artifactId>
     	<version>2.7.1</version>
-    </dependency>
-    <dependency>
-    	<groupId>org.openjfx</groupId>
-    	<artifactId>javafx-controls</artifactId>
-    	<version>16</version>
-    </dependency>
-    <dependency>
-    	<groupId>org.openjfx</groupId>
-    	<artifactId>javafx-fxml</artifactId>
-    	<version>16</version>
     </dependency>
     <dependency>
     	<groupId>org.hibernate</groupId>

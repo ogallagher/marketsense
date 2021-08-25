@@ -8,12 +8,12 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
-import java.net.URL;
+import java.net.URISyntaxException;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -28,10 +28,10 @@ import javax.sound.sampled.AudioInputStream;
 
 import com.fxgraph.cells.CartesianPoint;
 import com.fxgraph.graph.CartesianGraph;
+import com.fxgraph.graph.PannableCanvas;
 
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.beans.InvalidationListener;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -83,6 +83,7 @@ import ogallagher.temp_fx_logger.System;
 
 /**
  * Main program entrypoint for marketsense.
+ * TODO twelvedata client not working in jar
  * 
  * @author <a href="https://github.com/ogallagher">Owen Gallagher</a>
  * @since 9 June 2021
@@ -95,20 +96,36 @@ public class MarketSense {
 	/**
 	 * Program version string.
 	 */
-	public static final String VERSION = "0.1.0";
+	public static final String VERSION = "0.1.1";
+	
+	/**
+	 * Path to program parent directory. In development, this is the parent folder of the one containing 
+	 * the {@code .class} files. In production, this is the folder containing the {@code .jar} file.
+	 */
+	private static File PARENT_DIR;
+	/**
+	 * The read-write resources directory.<br><br>
+	 * 
+	 * In development, the {@code resources/} directory with program input and output files is in the same location as
+	 * the generated class files. In production, however, these will be packaged in a {@code .jar} file, which is read-only,
+	 * so the files that marketsense can write to must be in a different location (jar's parent directory).
+	 * 
+	 * @see #RESOURCES_DIR_R
+	 */
+	private static File RESOURCES_DIR_RW;
 	
 	/**
 	 * Path to program properties file.
 	 */
-	private static final URL PROPERTIES_FILE = MarketSense.class.getResource("resources/config.properties");
+	private static File PROPERTIES_FILE;
 	/**
 	 * Path to NYSE symbols list.
 	 */
-	private static final URL SYMBOLS_FILE_NYSE = MarketSense.class.getResource("resources/markets/NYSE_symbols_all.txt");
+	private static File SYMBOLS_NYSE_FILE;
 	/**
 	 * Path to NASDAQ symbols list.
 	 */
-	private static final URL SYMBOLS_FILE_NASDAQ = MarketSense.class.getResource("resources/markets/NASDAQ_symbols_all.txt");
+	private static File SYMBOLS_NASDAQ_FILE;
 	
 	/**
 	 * Program properties, loaded from the {@link #PROPERTIES_FILE properties file}.
@@ -176,8 +193,86 @@ public class MarketSense {
 	 */
 	private static MarketSynth marketSynth = null;
 	
+	// static member initialization
 	static {
 		FLOAT_FORMAT.setMaximumFractionDigits(2);
+		
+		try {
+			// determine resource locations
+			PARENT_DIR = new File(MarketSense.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getParentFile();
+			System.out.println("DEBUG marketsense parent dir = " + PARENT_DIR.getPath());
+			
+			RESOURCES_DIR_RW = new File(PARENT_DIR, "resources/");
+			// ensure rw resources exists
+			if (RESOURCES_DIR_RW.mkdir()) {
+				System.out.println("INFO created new rw resources dir at " + RESOURCES_DIR_RW.getPath());
+			}
+			else {
+				System.out.println("DEBUG found existing rw resources dir at " + RESOURCES_DIR_RW.getPath());
+			}
+			
+			// rw resource locations
+			String propertiesFile = "config.properties";
+			createWritableCopy(propertiesFile);
+			PROPERTIES_FILE = new File(RESOURCES_DIR_RW, propertiesFile);
+			
+			// create rw resources/markets
+			File marketsDirRW = new File(RESOURCES_DIR_RW, "markets/");
+			marketsDirRW.mkdir();
+			
+			// asset symbols lists
+			String symbolsNYSEFile = "markets/NYSE_symbols.txt";
+			createWritableCopy(symbolsNYSEFile);
+			SYMBOLS_NYSE_FILE = new File(RESOURCES_DIR_RW, symbolsNYSEFile);
+			
+			String symbolsNASDAQFile = "markets/NASDAQ_symbols.txt";
+			createWritableCopy(symbolsNASDAQFile);
+			SYMBOLS_NASDAQ_FILE = new File(RESOURCES_DIR_RW, symbolsNASDAQFile);
+		}
+		catch (URISyntaxException e) {
+			System.out.println("ERROR failed to load resource dir: " + e.getMessage());
+			Platform.exit();
+		}
+	}
+	
+	/**
+	 * Create a writable copy of a read-only file at {@code resources/<relReadablePath>}.
+	 * 
+	 * @param relReadablePath The relative path within the resources dir referencing the file to copy.
+	 * 
+	 * @return {@code true} if the copy was created or if the copy already exists.
+	 */
+	private static boolean createWritableCopy(String relReadablePath) {
+		InputStream readable = MarketSense.class.getResourceAsStream("resources/" + relReadablePath);
+		File writable = new File(RESOURCES_DIR_RW, relReadablePath);
+		
+		try {
+			if (!writable.exists()) {
+				FileOutputStream writer = new FileOutputStream(writable);
+				byte[] buffer = new byte[1024];
+				int len;
+				
+				do {
+					len = readable.read(buffer);
+					writer.write(buffer);
+				} while (len != -1);
+				
+				writer.close();
+				readable.close();
+				
+				System.out.println("INFO created new writable copy at " + writable.getPath());
+			}
+			else {
+				System.out.println("DEBUG writable already exists at " + writable.getPath());
+			}
+			
+			return true;
+		}
+		catch (IOException e) {
+			System.out.println("ERROR failed to find original to create writable copy of resources/" + relReadablePath);
+			System.out.println("ERROR " + e.getMessage());
+			return false;
+		}
 	}
 	
 	/**
@@ -194,18 +289,18 @@ public class MarketSense {
 	 * Handles any initialization that can be kept apart from the javafx gui application thread.
 	 * 
 	 * @author Owen Gallagher
-	 *
 	 */
 	public static class MarketSenseInit implements Runnable {
 		@Override
 		public void run() {
+			// load properties
 			try {
 				properties = getProperties();
-				System.out.println("found " + properties.size() + " program properties");
+				System.out.println("DEBUG found " + properties.size() + " program properties");
 			}
 			catch (FileNotFoundException e) {
 				properties = new Properties();
-				System.out.println(e.getMessage());
+				System.out.println("ERROR " + e.getMessage());
 			}
 			
 			// decide whether to run tests
@@ -232,7 +327,7 @@ public class MarketSense {
 		public void start(Stage primaryStage) throws Exception {
 			System.out.println("MarketSense.start start");
 			
-			// non-gui initialization
+			// non-gui initialization TODO move outside gui
 			new Thread(new MarketSenseInit()).start();
 			
 			// main window
@@ -501,8 +596,11 @@ public class MarketSense {
 		public static class ShowTrainingSession implements Runnable {
 			private TrainingSession session;
 			
+			private CartesianGraph currentSampleGraph;
+			
 			public ShowTrainingSession(TrainingSession session) {
 				this.session = session;
+				this.currentSampleGraph = null;
 			}
 			
 			@Override
@@ -668,13 +766,14 @@ public class MarketSense {
 							)));
 							
 							// reset market data graph
-							CartesianGraph sampleGraph = loadSampleGraph(sample, 600, 350);
+							currentSampleGraph = loadSampleGraph(sample, 600, 350);
+							PannableCanvas canvas = currentSampleGraph.getCanvas();
 							
 							graphContainer.getChildren().clear();
-							graphContainer.setCenter(sampleGraph.getCanvas());
+							graphContainer.setCenter(canvas);
 							graphContainer.setClip(new Rectangle(
-								sampleGraph.getCanvas().getPrefWidth(), 
-								sampleGraph.getCanvas().getPrefHeight()
+									canvas.getPrefWidth(), 
+									canvas.getPrefHeight()
 							));
 							
 							// TODO fix CartesianGraph.layout
@@ -835,12 +934,12 @@ public class MarketSense {
 		HashSet<String> allSymbols = new HashSet<>();
 		
 		// read symbols from resources
-		for (URL url : new URL[] {
-			SYMBOLS_FILE_NYSE,
-			SYMBOLS_FILE_NASDAQ
+		for (File file : new File[] {
+			SYMBOLS_NYSE_FILE,
+			SYMBOLS_NASDAQ_FILE
 		}) {
 			try {
-				BufferedReader reader = new BufferedReader(new FileReader(url.getPath()));
+				BufferedReader reader = new BufferedReader(new FileReader(file));
 				Iterator<String> line = reader.lines().iterator();
 				
 				// skip header
@@ -854,7 +953,7 @@ public class MarketSense {
 				reader.close();
 			}
 			catch (IOException e) {
-				System.out.println("failed to read symbols list from " + url.getPath());
+				System.out.println("failed to read symbols list from " + file.getPath());
 			}
 		}
 		
@@ -1085,9 +1184,16 @@ public class MarketSense {
 		}
 	}
 	
+	/**
+	 * Read from the properties file {@link #PROPERTIES_FILE}.
+	 * 
+	 * @return Project properties.
+	 * 
+	 * @throws FileNotFoundException If the properties file was not found.
+	 */
 	private static Properties getProperties() throws FileNotFoundException {
 		Properties properties = new Properties();
-		FileInputStream istream = new FileInputStream(PROPERTIES_FILE.getPath());
+		FileInputStream istream = new FileInputStream(PROPERTIES_FILE);
 		
 		try {
 			properties.load(istream);
@@ -1098,17 +1204,24 @@ public class MarketSense {
 		}
 	}
 	
+	/**
+	 * Save project properties to the properties file {@link #PROPERTIES_FILE}.
+	 */
 	private static void saveProperties() {
 		try {
-			new File(PROPERTIES_FILE.getPath()).createNewFile();
+			PROPERTIES_FILE.createNewFile();
 			
 			String comments = 
 				"last updated by marketsense " + LocalDateTime.now();
 			
-			properties.store(new FileOutputStream(PROPERTIES_FILE.getPath()), comments);
+			properties.store(new FileOutputStream(PROPERTIES_FILE), comments);
 		} 
 		catch (IOException e) {
 			System.out.println("ERROR unable to save to properties file");
 		}
+	}
+	
+	public static File getParentDir() {
+		return PARENT_DIR;
 	}
 }

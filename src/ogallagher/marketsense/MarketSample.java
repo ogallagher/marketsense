@@ -185,6 +185,10 @@ public class MarketSample {
 		return futureMovement;
 	}
 	
+	public TradeBar getFuture() {
+		return future;
+	}
+	
 	public Color getColor() {
 		return color;
 	}

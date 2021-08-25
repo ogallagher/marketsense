@@ -12,11 +12,11 @@ import javax.sound.sampled.AudioFileFormat;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.Clip;
 import javax.sound.sampled.DataLine;
 import javax.sound.sampled.LineUnavailableException;
-import javax.sound.sampled.Mixer;
 import javax.sound.sampled.SourceDataLine;
+
+import ogallagher.temp_fx_logger.System;
 
 /**
  * Converts a 2D dataset to a sound, being a melody of pitches with constant timbre and amplitude using the
@@ -107,14 +107,14 @@ public class MarketSynth {
 	
 	static {
 		// ensure sounds dir exists
-		String workingDir = MarketSense.class.getResource("./").getPath();
+		String workingDir = MarketSense.getParentDir().getPath();
 		soundsDir = new File(workingDir, SOUNDS_DIR);
 		if (!soundsDir.exists()) {
 			soundsDir.mkdir();
-			System.out.println("created sounds dir at " + soundsDir.getAbsolutePath());
+			System.out.println("INFO created sounds dir at " + soundsDir.getAbsolutePath());
 		}
 		else {
-			System.out.println("found sounds dir at " + soundsDir.getAbsolutePath());
+			System.out.println("DEBUG found sounds dir at " + soundsDir.getAbsolutePath());
 		}
 	}
 	
