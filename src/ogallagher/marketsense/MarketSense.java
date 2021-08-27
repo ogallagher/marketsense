@@ -83,7 +83,6 @@ import ogallagher.temp_fx_logger.System;
 
 /**
  * Main program entrypoint for marketsense.
- * TODO twelvedata client not working in jar
  * 
  * @author <a href="https://github.com/ogallagher">Owen Gallagher</a>
  * @since 9 June 2021
