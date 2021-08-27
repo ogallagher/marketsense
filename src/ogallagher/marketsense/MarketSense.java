@@ -249,12 +249,12 @@ public class MarketSense {
 			if (!writable.exists()) {
 				FileOutputStream writer = new FileOutputStream(writable);
 				byte[] buffer = new byte[1024];
-				int len;
+				int len = readable.read(buffer);
 				
-				do {
+				while (len != -1) {
+					writer.write(buffer, 0, len);
 					len = readable.read(buffer);
-					writer.write(buffer);
-				} while (len != -1);
+				}
 				
 				writer.close();
 				readable.close();
