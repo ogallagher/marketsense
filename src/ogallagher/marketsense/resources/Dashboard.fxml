@@ -3,12 +3,13 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.control.*?>
 <?import java.net.URL?>
-<?import javafx.scene.control.Button?>
 <?import javafx.scene.layout.HBox?>
-<?import javafx.scene.control.Label?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ToggleButton?>
 <?import java.lang.String?>
 <?import java.lang.Integer?>
 
@@ -36,14 +37,17 @@
 			<children>
 				<!--  session history -->
 				<VBox alignment="TOP_LEFT">
-					<Label text="Session History" styleClass="h2"></Label>
+					<children>
+						<Label text="Session History" styleClass="h2"></Label>
 					
-					<ListView fx:id="sessionHistory"></ListView>
+						<ListView fx:id="sessionHistory"></ListView>
+					</children>
 				</VBox>
 				
 				<!-- new session form -->
 				<VBox alignment="TOP_LEFT" spacing="4">
-					<Label text="New Session" styleClass="h2"></Label>
+					<children>
+						<Label text="New Session" styleClass="h2"></Label>
 					
 					<HBox spacing="8">
 						<children>
@@ -88,6 +92,19 @@
 							<Button fx:id="trainButton" text="train"></Button>
 						</children>
 					</HBox>
+					</children>
+				</VBox>
+				
+				<!-- general settings -->
+				<VBox alignment="TOP_LEFT" spacing="4">
+					<children>
+						<Label text="App Settings" styleClass="h2"></Label>
+						<HBox spacing="8">
+							<children>
+								<ToggleButton fx:id="saveSounds" selected="false" text="save sounds"></ToggleButton>
+							</children>
+						</HBox>
+					</children>
 				</VBox>
 			</children>
 		</HBox>

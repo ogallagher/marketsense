@@ -52,6 +52,7 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.Slider;
 import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
@@ -150,6 +151,11 @@ public class MarketSense {
 	 * Program properties key for whether to run unit tests prior to running the program.
 	 */
 	private static final String PROP_RUN_TESTS = "run_tests";
+	
+	/**
+	 * Program properties key for whether to save sounds generated with the {@link #marketSynth}.
+	 */
+	private static final String PROP_SAVE_SOUNDS = "save_sounds";
 	
 	/**
 	 * Program properties key for the default training session asset symbol.
@@ -443,6 +449,12 @@ public class MarketSense {
 					Node dashboard = (Node) FXMLLoader.load(MarketSense.class.getResource("resources/Dashboard.fxml")); 
 					content.add(dashboard);
 					
+					// trim text fields
+					for (Node tfn : dashboard.lookupAll("TextField")) {
+						TextField tf = (TextField) tfn;
+						tf.setPrefColumnCount(4);
+					}
+					
 					// fill in user stats
 					if (person != null) {
 						Label nameLabel = (Label) mainScene.lookup("#userName");
@@ -464,6 +476,9 @@ public class MarketSense {
 						}
 					});
 					
+					// enable app settings
+					loadAppSettings(dashboard);
+					
 					// fill in training session history
 					trainingSessionsList = (ListView<TrainingSession>) mainScene.lookup("#sessionHistory");
 					loadTrainingSessions(ShowTrainingSessions.class, true);
@@ -474,6 +489,22 @@ public class MarketSense {
 				catch (IOException e) {
 					System.out.println("error showing dashboard: " + e.getMessage());
 				}
+			}
+			
+			private void loadAppSettings(Node dashboard) {
+				// save sounds
+				ToggleButton saveSounds = (ToggleButton) dashboard.lookup("#saveSounds");
+				
+				// handle update
+				saveSounds.selectedProperty().addListener(new ChangeListener<Boolean>() {
+					@Override
+					public void changed(ObservableValue<? extends Boolean> v, Boolean ov, Boolean nv) {
+						properties.setProperty(PROP_SAVE_SOUNDS, nv.toString());
+					}
+				});
+				
+				// initial value from properties
+				saveSounds.setSelected(Boolean.valueOf(properties.getProperty(PROP_SAVE_SOUNDS, "false")));
 			}
 			
 			@SuppressWarnings("unchecked")
@@ -506,10 +537,11 @@ public class MarketSense {
 				ComboBox<Integer> sampleSizeDropdown = (ComboBox<Integer>) dashboard.lookup("#trainSampleSize");
 				
 				// current supported sample sizes
+				Integer sampleSize = Integer.valueOf(properties.getProperty(PROP_TRAIN_SAMPLE_SIZE, "7"));
+				
 				HashSet<Integer> sampleSizes = new HashSet<Integer>();
-				sampleSizes.add(Integer.valueOf(properties.getProperty(PROP_TRAIN_SAMPLE_SIZE, "7")));
 				for (Integer size : new Integer[] {
-					7, 10, 15, 20, 30
+					sampleSize, 7, 10, 15, 20, 30
 				}) {
 					sampleSizes.add(size);
 				}
@@ -520,6 +552,8 @@ public class MarketSense {
 						// sort with TreeSet constructor
 						new TreeSet<Integer>(sampleSizes)
 					)));
+				
+				sampleSizeDropdown.setValue(sampleSize);
 				
 				// max lookback
 				TextField maxLookback = (TextField) dashboard.lookup("#trainMaxLookback");
@@ -593,6 +627,9 @@ public class MarketSense {
 		}
 		
 		public static class ShowTrainingSession implements Runnable {
+			private static final int SAMPLE_GRAPH_WIDTH = 600;
+			private static final int SAMPLE_GRAPH_HEIGHT = 300;
+			
 			private TrainingSession session;
 			
 			private CartesianGraph currentSampleGraph;
@@ -731,12 +768,14 @@ public class MarketSense {
 				colorGuess.valueProperty().addListener(guessListener);
 				guessListener.changed(null, null, colorGuess.valueProperty().getValue());
 				
+				// sample graph container
+				BorderPane graphContainer = (BorderPane) sessionRoot.lookup("#sampleGraph");
+				graphContainer.setPadding(Insets.EMPTY);
+				
 				// next sample (enabled on color guess)
 				Button nextSample = (Button) sessionRoot.lookup("#nextSample");
 				nextSample.setDisable(false);
 				
-				BorderPane graphContainer = (BorderPane) sessionRoot.lookup("#sampleGraph");
-				graphContainer.setPadding(Insets.EMPTY);
 				nextSample.setOnAction(new EventHandler<ActionEvent>() {
 					@Override
 					public void handle(ActionEvent event) {
@@ -764,8 +803,8 @@ public class MarketSense {
 								Insets.EMPTY
 							)));
 							
-							// reset market data graph
-							currentSampleGraph = loadSampleGraph(sample, 600, 350);
+							// reload market data graph
+							currentSampleGraph = loadSampleGraph(sample, SAMPLE_GRAPH_WIDTH, SAMPLE_GRAPH_HEIGHT);
 							PannableCanvas canvas = currentSampleGraph.getCanvas();
 							
 							graphContainer.getChildren().clear();
@@ -777,6 +816,11 @@ public class MarketSense {
 							
 							// TODO fix CartesianGraph.layout
 							// sampleGraph.layout();
+							
+							// save sample sound
+							if (Boolean.valueOf(properties.getProperty(PROP_SAVE_SOUNDS, "false"))) {
+								marketSynth.save(sample.getSound(), sample.idString());
+							}
 						}
 						// else, training session already complete
 						else {
@@ -1051,11 +1095,11 @@ public class MarketSense {
 		Security security = null;
 		
 		// commit training session config to properties file
-		properties.setProperty("train_symbol", symbol);
-		properties.setProperty("train_bar_width", barWidth);
-		properties.setProperty("train_sample_size", Integer.toString(sampleSize));
-		properties.setProperty("train_sample_count", Integer.toString(sampleCount));
-		properties.setProperty("train_lookback_max_months", Integer.toString(maxLookbackMonths));
+		properties.setProperty(PROP_TRAIN_SYMBOL, symbol);
+		properties.setProperty(PROP_TRAIN_BAR_WIDTH, barWidth);
+		properties.setProperty(PROP_TRAIN_SAMPLE_SIZE, Integer.toString(sampleSize));
+		properties.setProperty(PROP_TRAIN_SAMPLE_COUNT, Integer.toString(sampleCount));
+		properties.setProperty(PROP_TRAIN_LOOKBACK_MAX_MONTHS, Integer.toString(maxLookbackMonths));
 		saveProperties();
 		
 		// try to fetch security from db

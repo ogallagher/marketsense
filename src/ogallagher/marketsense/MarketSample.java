@@ -202,6 +202,23 @@ public class MarketSample {
 		return "MarketSample(security=" + security + ", start=" + start + ", end=" + end + ")";
 	}
 	
+	/**
+	 * @return A concise and unique identifying string for this sample.
+	 */
+	public String idString() {
+		return new StringBuilder()
+			.append(security.getSymbol())
+			.append('_')
+			.append(start)
+			.append('_')
+			.append(end)
+			.append('_')
+			.append(barWidth)
+			.append('_')
+			.append(bars.size())
+			.toString();
+	}
+	
 	public static enum FutureMovementFormula {
 		/**
 		 * Proportional difference from last px in sample.
