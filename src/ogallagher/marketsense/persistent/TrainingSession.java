@@ -35,6 +35,7 @@ import ogallagher.marketsense.MarketSample;
 import ogallagher.marketsense.MarketSynth;
 import ogallagher.twelvedata_client_java.TwelvedataClient;
 import ogallagher.twelvedata_client_java.TwelvedataInterface.BarInterval;
+import ogallagher.twelvedata_client_java.TwelvedataInterface.Failure;
 import ogallagher.twelvedata_client_java.TwelvedataInterface.TimeSeries;
 
 /**
@@ -206,14 +207,15 @@ public class TrainingSession {
 	 * so there are never any holes between the start and end datetimes.
 	 * 
 	 * Note that ideal universe bounds won't necessarily match valid market calendars and market hours, so in cases where this is
-	 * expected, the universe bounds {@link after} .. {@link before} will be updated to match what the database does have.
+	 * expected, the universe bounds {@link #after} .. {@link #before} will be updated to match what the database does have.
 	 * 
-	 * @return {@code true} if the needed market data is now in the database.
+	 * @return The failure, or {@code null} if the needed market data is now in the database.
 	 */
-	public boolean collectMarketUniverse(EntityManager dbManager, TwelvedataClient marketClient) {
-		boolean result = true, 
-				firstUp = false, 
-				lastDown = false;
+	public Failure collectMarketUniverse(EntityManager dbManager, TwelvedataClient marketClient) {
+		Failure result = null;
+		
+		boolean firstUp = false;
+		boolean lastDown = false;
 		
 		TradeBar first = new TradeBar(security, after, barWidth);
 		TradeBar last = new TradeBar(security, BarInterval.offsetBars(before, barWidth, sampleSize), barWidth);
@@ -222,7 +224,7 @@ public class TrainingSession {
 		TradeBar preLast = null, postFirst = null;
 		
 		dbManager.getTransaction().begin();
-		if (!dbManager.contains(first)) {
+		if (result == null && !dbManager.contains(first)) {
 			// move forward to find earliest bar after first
 			String qstr = String.format(
 				"select t from %5$s t " + 
@@ -259,7 +261,7 @@ public class TrainingSession {
 				security.getSymbol(), barWidth, 
 				first.getDatetime(), BarInterval.offsetBars(preLast.getDatetime(), barWidth, -1)
 			);
-			if (timeSeries != null) {
+			if (!timeSeries.isFailure()) {
 				// convert to db-compat trade bars and persist
 				List<TradeBar> bars = TradeBar.convertTimeSeries(timeSeries, Comparator.naturalOrder());
 				
@@ -269,15 +271,29 @@ public class TrainingSession {
 				System.out.println("persisted " + bars.size() + " new bars");
 			}
 			else {
-				System.out.println("WARNING failed to fetch first-prelast for universe, perhaps no bars exist");
-				// update first to be preLast
-				firstUp = true;
+				Failure f = (Failure) timeSeries;
+				switch (f.code) {
+					case Failure.ErrorCode.API_KEY:
+					case Failure.ErrorCode.CALL_LIMIT:
+					case Failure.ErrorCode.NO_COMMS:
+					case Failure.ErrorCode.NULL_RESPONSE:
+						result = f;
+						break;
+						
+					default:
+						System.out.println(
+							"WARNING failed to fetch first-prelast for universe, perhaps no bars exist: " + f.toString()
+						);
+						// update first to be preLast
+						firstUp = true;
+						break;
+				}
 			}
 		}
 		dbManager.getTransaction().commit();
 		
 		dbManager.getTransaction().begin();
-		if (!dbManager.contains(last)) {
+		if (result == null && !dbManager.contains(last)) {
 			// move backward to find latest bar before last
 			Query query = dbManager.createQuery(
 				String.format(
@@ -314,7 +330,7 @@ public class TrainingSession {
 				security.getSymbol(), barWidth, 
 				BarInterval.offsetBars(postFirst.getDatetime(), barWidth, 1), last.getDatetime()
 			);
-			if (timeSeries != null) {
+			if (!timeSeries.isFailure()) {
 				// convert to db-compat trade bars and persist
 				List<TradeBar> bars = TradeBar.convertTimeSeries(timeSeries, Comparator.naturalOrder());
 				
@@ -324,20 +340,35 @@ public class TrainingSession {
 				System.out.println("persisted " + bars.size() + " new bars");
 			}
 			else {
-				System.out.println("WARNING failed to fetch postfirst-last for universe, perhaps no bars exist");
-				// update last to be postFirst
-				lastDown = true;
+				Failure f = (Failure) timeSeries;
+				switch (f.code) {
+					case Failure.ErrorCode.API_KEY:
+					case Failure.ErrorCode.CALL_LIMIT:
+					case Failure.ErrorCode.NO_COMMS:
+					case Failure.ErrorCode.NULL_RESPONSE:
+						result = f;
+						break;
+						
+					default:
+						System.out.println("WARNING failed to fetch postfirst-last for universe, perhaps no bars exist: " + f);
+						// update last to be postFirst
+						lastDown = true;
+						break;
+				}
+				
 			}
 		}
 		dbManager.getTransaction().commit();
 		
-		if (firstUp) {
-			after = preLast.getDatetime();
+		if (result == null) {
+			if (firstUp) {
+				after = preLast.getDatetime();
+			}
+			if (lastDown) {
+				before = BarInterval.offsetBars(postFirst.getDatetime(), barWidth, -sampleSize);
+			}
+			System.out.println("DEBUG universe trimmed to " + first.getDatetime() + " to " + last.getDatetime());
 		}
-		if (lastDown) {
-			before = BarInterval.offsetBars(postFirst.getDatetime(), barWidth, -sampleSize);
-		}
-		System.out.println("DEBUG universe trimmed to " + first.getDatetime() + " to " + last.getDatetime());
 		
 		return result;
 	}

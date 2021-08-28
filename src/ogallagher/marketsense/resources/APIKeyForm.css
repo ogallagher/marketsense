@@ -1,0 +1,40 @@
+/*
+
+Owen Gallagher
+2021-08-28
+
+Market data API Key input form.
+
+*/
+
+.root {
+	-fx-font-size: 14px;
+    -fx-font-family: sans-serif;
+    -fx-background-color: #fff;
+    -fx-padding: 4 4 4 4;
+}
+
+.h1 {
+	-fx-font-size: 24px;
+	-fx-font-weight: bold;
+	-fx-padding: 2 0 8 0; 
+}
+
+.h2 {
+	-fx-font-size: 20px;
+	-fx-padding: 2 0 4 0;
+}
+
+.h3 {
+	-fx-font-size: 16px;
+	-fx-padding: 2 0 4 0;
+}
+
+.paragraph {
+	-fx-padding: 4px 0px 4px 0px;
+	-fx-text-alignment: left;
+}
+
+.code {
+	-fx-font-family: "monospace";
+}

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.net.URL?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.text.Text?>
+<?import javafx.scene.text.TextFlow?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.Hyperlink?>
+<?import javafx.scene.control.Tooltip?>
+
+<HBox xmlns:fx="http://javafx.com/fxml/1" styleClass="root" alignment="CENTER" fillHeight="false">
+	<stylesheets>
+		<URL value="@APIKeyForm.css" />
+	</stylesheets>
+	
+	<children>
+		<VBox alignment="CENTER" fillWidth="true" spacing="8">
+			<children>
+				<!-- title -->
+				<Label text="Market Data API Key" styleClass="h1"></Label>
+				
+				<TextFlow styleClass="paragraph">
+					<Text text="There was a problem when fetching market data from Twelvedata with the API key "/>
+					
+					<Text fx:id="apiKeyOld" text="YOUR API KEY" styleClass="code"/>
+					
+					<Text text=". If you haven't yet created your free API key, visit "/>
+					
+					<Hyperlink text="twelvedata.com/apikey" styleClass="code">
+						<tooltip><Tooltip text="https://twelvedata.com/apikey" /></tooltip>
+					</Hyperlink>
+					<Text text="."/>
+				</TextFlow>
+				
+				<Text text="Please paste your corrected key below:" styleClass="paragraph"/>
+				
+				<TextField fx:id="apiKeyNew" prefColumnCount="32" promptText="Your API key"></TextField>
+			</children>
+		</VBox>
+	</children>
+</HBox>
+

@@ -19,6 +19,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 import java.util.TreeSet;
 
 import javax.persistence.EntityManager;
@@ -31,6 +32,7 @@ import com.fxgraph.graph.CartesianGraph;
 import com.fxgraph.graph.PannableCanvas;
 
 import javafx.application.Application;
+import javafx.application.HostServices;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -46,6 +48,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
@@ -63,11 +66,14 @@ import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 import javafx.util.Callback;
 
 import ogallagher.twelvedata_client_java.TwelvedataClient;
 import ogallagher.twelvedata_client_java.TwelvedataInterface.BarInterval;
+import ogallagher.twelvedata_client_java.TwelvedataInterface.Failure;
 import ogallagher.twelvedata_client_java.TwelvedataInterface.SecuritySet;
 import ogallagher.marketsense.persistent.Person;
 import ogallagher.marketsense.persistent.Security;
@@ -325,6 +331,11 @@ public class MarketSense {
 		private static int MAIN_WINDOW_WIDTH_INIT = 600;
 		private static int MAIN_WINDOW_HEIGHT_INIT = 500;
 		
+		/**
+		 * Provide static access to the {@code HostServices} instance of the latest {@code MarketSenseGUI} launched.
+		 */
+		private static HostServices hostServices;
+		
 		public static void main(String[] args) {
 			launch(args);
 		}
@@ -349,6 +360,17 @@ public class MarketSense {
 			);
 			mainWindow.setScene(mainScene);
 			
+			// end program on main window close
+			mainWindow.setOnHidden(new EventHandler<WindowEvent>() {
+				@Override
+				public void handle(WindowEvent event) {
+					Platform.exit();
+				}
+			});
+			
+			// host services
+			hostServices = getHostServices();
+			
 			// connect db entity manager
 			dbManager = Persistence
 			.createEntityManagerFactory(properties.getProperty(PROP_PERSIST_UNIT))
@@ -361,6 +383,11 @@ public class MarketSense {
 			
 			// load login form
 			loadPeople(ShowLogin.class, true);
+		}
+		
+		@Override
+		public void stop() {
+			// TODO handle program exit
 		}
 		
 		/**
@@ -428,7 +455,7 @@ public class MarketSense {
 					});
 				}
 				catch (IOException e) {
-					System.out.println("error showing login: " + e.getMessage());
+					System.out.println("ERROR showing login: " + e.getMessage());
 				}
 			}
 		}
@@ -973,6 +1000,92 @@ public class MarketSense {
 				return graph;
 			}
 		}
+		
+		public static class ShowApiKeyForm implements Runnable {
+			private static final String WINDOW_TITLE = "API Key Form";
+			private static final int WINDOW_WIDTH = 500;
+			private static final int WINDOW_HEIGHT = 240;
+			
+			private Stage apiKeyFormWindow;
+			private String keyOld;
+			
+			public ShowApiKeyForm(String keyOld) {
+				apiKeyFormWindow = new Stage();
+				apiKeyFormWindow.setTitle(WINDOW_TITLE);
+				apiKeyFormWindow.setWidth(WINDOW_WIDTH);
+				apiKeyFormWindow.setHeight(WINDOW_HEIGHT);
+				
+				this.keyOld = keyOld;
+			}
+			
+			@Override
+			public void run() {
+				try {
+					Parent root = (Parent) FXMLLoader.load(MarketSense.class.getResource("resources/APIKeyForm.fxml"));
+					Scene windowScene = new Scene(root);
+					
+					apiKeyFormWindow.setScene(windowScene);
+					
+					enableHyperlinks(root);
+					
+					// show old key
+					((Text) root.lookup("#apiKeyOld")).setText(keyOld);
+					
+					// handle new key
+					TextField keyField = (TextField) root.lookup("#apiKeyNew");
+					keyField.setOnKeyReleased(new EventHandler<KeyEvent>() {
+						@Override
+						public void handle(KeyEvent event) {
+							if (event.getCode().equals(KeyCode.ENTER)) {
+								String keyNew = keyField.getText();
+								
+								if (keyNew.length() != 0) {
+									// set api key of twelvedata client
+									tdclient.setKey(keyNew);
+									System.out.println("INFO set api key to " + keyNew);
+									
+									// close window
+									apiKeyFormWindow.close();
+								}
+								else {
+									System.out.println("ERROR api key not given");
+									keyField.setText("");
+									keyField.setPromptText("blank or invalid key given");
+								}
+							}
+						}
+					});
+					
+					apiKeyFormWindow.show();
+				}
+				catch (IOException e) {
+					System.out.println("ERROR showing api key form window: " + e.getMessage());
+					e.printStackTrace();
+				}
+			}
+			
+			/**
+			 * Enable hyperlinks in the given gui fragment, given that they store their urls in the 
+			 * {@link Hyperlink#tooltipProperty() tooltip}.
+			 * 
+			 * @param root The gui fragment root node.
+			 */
+			private void enableHyperlinks(Node root) {
+				Set<Node> hyperlinks = root.lookupAll("Hyperlink");
+				System.out.println("DEBUG found " + hyperlinks.size() + " hyperlinks");
+				
+				for (Node hln : hyperlinks) {
+					Hyperlink hl = (Hyperlink) hln;
+					hl.setOnAction(new EventHandler<ActionEvent>() {
+						@Override
+						public void handle(ActionEvent event) {
+							// assumes href is in tooltip
+							hostServices.showDocument(hl.getTooltip().getText());
+						}
+					});
+				}
+			}
+		}
 	}
 	
 	/**
@@ -1201,14 +1314,20 @@ public class MarketSense {
 			System.out.println("starting a new training session " + session);
 			
 			// prepare the database
-			if (session.collectMarketUniverse(dbManager,tdclient)) {
+			Failure failure = session.collectMarketUniverse(dbManager,tdclient);
+			
+			if (failure == null) {
 				System.out.println("market data universe acquired for lookback of " + session.getMaxLookbackMonths() + " months");
 				
 				// show training session interface
 				Platform.runLater(new MarketSenseGUI.ShowTrainingSession(session));
 			}
+			else if (failure.code == Failure.ErrorCode.API_KEY) {
+				// show api key input form
+				Platform.runLater(new MarketSenseGUI.ShowApiKeyForm(tdclient.getKey()));
+			}
 			else {
-				System.out.println("ERROR failed to creake market data universe for training session");
+				System.out.println("ERROR failed to creake market data universe for training session: " + failure.message);
 			}
 			
 			return true;
