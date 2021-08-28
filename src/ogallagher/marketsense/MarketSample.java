@@ -181,6 +181,9 @@ public class MarketSample {
 		return sound;
 	}
 	
+	/**
+	 * @return {@link #futureMovement}
+	 */
 	public double getFutureMovement() {
 		return futureMovement;
 	}

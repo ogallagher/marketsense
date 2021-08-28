@@ -80,6 +80,7 @@ import ogallagher.marketsense.persistent.TrainingSessionType;
 import ogallagher.marketsense.test.Test;
 import ogallagher.marketsense.test.TestDatabase;
 import ogallagher.marketsense.test.TestMarketSynth;
+import ogallagher.marketsense.util.PointFilter;
 import ogallagher.temp_fx_logger.System;
 
 /**
@@ -96,7 +97,7 @@ public class MarketSense {
 	/**
 	 * Program version string.
 	 */
-	public static final String VERSION = "0.1.1";
+	public static final String VERSION = "0.1.2";
 	
 	/**
 	 * Path to program parent directory. In development, this is the parent folder of the one containing 
@@ -633,6 +634,7 @@ public class MarketSense {
 			private TrainingSession session;
 			
 			private CartesianGraph currentSampleGraph;
+			private PointFilter dataFilter;
 			
 			public ShowTrainingSession(TrainingSession session) {
 				this.session = session;
@@ -865,6 +867,25 @@ public class MarketSense {
 						// update average score
 						session.updateScore(score);
 						
+						// add future to sample graph
+						dataFilter.setInput(new Point2D(dataFilter.getMaxX(), sample.getFuture().getClose()));
+						try {
+							Point2D futurePoint = dataFilter.call().get(0);
+							
+							currentSampleGraph.addPoint(
+								futurePoint, 
+								null, 
+								CartesianPoint.RADIUS_DEFAULT, 
+								CartesianPoint.BulletType.CIRCLE, 
+								javafx.scene.paint.Color.BLUEVIOLET
+							);
+							
+							currentSampleGraph.addLastEdge();
+						}
+						catch (Exception e) {
+							System.out.println("ERROR failed to use data filter for future point: " + e.getMessage());
+						}
+						
 						// enable next sample button
 						nextSample.setDisable(false);
 					}
@@ -912,21 +933,42 @@ public class MarketSense {
 					points.add(p);
 				}
 				
-				for (i=0; i<points.size(); i++) {
-					p = points.get(i);
-					x = p.getX(); y = p.getY();
-					points.set(i, new Point2D(
-						(x-minX)/(maxX-minX) * (graphWidth-50),
-						// 1 - ... flips y axis
-						(1 - (y-minY)/(maxY-minY)) * (graphHeight-50)
-					));
-				}
+				// reserve space for future point
+				double postmaxX = maxX + (maxX-minX)/points.size();
 				
-				graph.addDataset(
-					points, 
-					"sample " + session.getSampleIdProperty().get(), 
-					5, CartesianPoint.BulletType.CIRCLE, javafx.scene.paint.Color.CRIMSON
-				);
+				// define data filter
+				dataFilter = new PointFilter(minX,postmaxX,minY,maxY,graphWidth,graphHeight) {
+					@Override
+					public List<Point2D> call() {
+						List<Point2D> output = new ArrayList<>(this.input.size());
+						
+						for (Point2D point : input) {
+							output.add(new Point2D(
+								(point.getX()-this.minX)/(this.maxX-minX) * (this.graphWidth-50),
+								// 1 - ... flips y axis
+								(1 - (point.getY()-this.minY)/(this.maxY-this.minY)) * (this.graphHeight-50)
+							));
+						}
+						
+						return output;
+					}
+				};
+				
+				try {
+					// filter data
+					dataFilter.setInput(points);
+					points = dataFilter.call();
+					
+					// add filtered data to graph
+					graph.addDataset(
+						points, 
+						"sample " + session.getSampleIdProperty().get(), 
+						5, CartesianPoint.BulletType.CIRCLE, javafx.scene.paint.Color.CRIMSON
+					);
+				} 
+				catch (Exception e) {
+					System.out.println("ERROR error using data filter: " + e.getMessage());
+				}
 				
 				return graph;
 			}
