@@ -1,112 +1,134 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.layout.*?>
-<?import javafx.scene.control.*?>
 <?import java.net.URL?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.Priority?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.control.ListView?>
 <?import java.lang.String?>
 <?import java.lang.Integer?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.layout.BorderPane?>
 
-<VBox xmlns:fx="http://javafx.com/fxml/1" alignment="TOP_CENTER" spacing="4">
+<VBox xmlns:fx="http://javafx.com/fxml/1" alignment="TOP_CENTER" spacing="4" fillWidth="true">
 	<stylesheets>
 		<URL value="@Dashboard.css" />
 	</stylesheets>
 	
 	<children>
-		<!-- title -->
-		<Label text="Dashboard" styleClass="h1"></Label>
-		
-		<!-- user stats and logout button -->
-		<HBox fx:id="userStats" spacing="8" alignment="CENTER_LEFT" styleClass="h3">
-			<children>
-				<Label fx:id="userName" text="username"></Label>
-				<Label fx:id="userAccuracy" text="accuracy"></Label>
-				<Label fx:id="userSince" text="since"></Label>
-				
+		<!-- title and logout-->
+		<BorderPane>
+			<left>
+				<Label text="Dashboard" styleClass="h1">
+				</Label>
+			</left>
+			<right>
 				<Button fx:id="logout" text="log out"></Button>
-			</children>
-		</HBox>
+			</right>
+		</BorderPane>
 		
-		<HBox spacing="8" alignment="TOP_LEFT">
-			<children>
+		<BorderPane>
+			<left>
 				<!--  session history -->
 				<VBox alignment="TOP_LEFT">
+					<padding><Insets right="4" left="4"/></padding>
 					<children>
 						<Label text="Session History" styleClass="h2"></Label>
 					
 						<ListView fx:id="sessionHistory"></ListView>
 					</children>
 				</VBox>
-				
-				<!-- new session form -->
-				<VBox alignment="TOP_LEFT" spacing="4">
-					<children>
-						<Label text="New Session" styleClass="h2"></Label>
-					
-					<HBox spacing="8">
-						<children>
-							<Label text="symbol"></Label>
-							<ComboBox fx:id="trainSymbol">
-								<value><String fx:value="AAPL"/></value>
-							</ComboBox>
-						</children>
-					</HBox>
-					<HBox spacing="8">
-						<children>
-							<Label text="bar width"></Label>
-							<ComboBox fx:id="trainBarWidth">
-								<value><String fx:value="1day"/></value>
-							</ComboBox>
-						</children>
-					</HBox>
-					<HBox spacing="8">
-						<children>
-							<Label text="sample size"></Label>
-							<ComboBox fx:id="trainSampleSize">
-								<value><Integer fx:value="7"/></value>
-							</ComboBox>
-							<Label text="bars"></Label>
-						</children>
-					</HBox>
-					<HBox spacing="8">
-						<children>
-							<Label text="max lookback"></Label>
-							<TextField fx:id="trainMaxLookback" text="24"></TextField>
-							<Label text="months"></Label>
-						</children>
-					</HBox>
-					<HBox spacing="8">
-						<children>
-							<Label text="reps"></Label>
-							<TextField fx:id="trainSampleCount" text="30"></TextField>
-						</children>
-					</HBox>
-					<HBox alignment="CENTER">
-						<children>
-							<Button fx:id="trainButton" text="train"></Button>
-						</children>
-					</HBox>
-					</children>
-				</VBox>
-				
-				<!-- general settings -->
-				<VBox alignment="TOP_LEFT" spacing="4">
-					<children>
-						<Label text="App Settings" styleClass="h2"></Label>
-						<HBox spacing="8">
+			</left>
+			<center>
+				<BorderPane>
+					<padding><Insets right="4" left="4"/></padding>
+					<top>
+						<HBox>
 							<children>
-								<ToggleButton fx:id="saveSounds" selected="false" text="save sounds"></ToggleButton>
+								<VBox spacing="4">
+									<children>
+										<!-- new session form -->
+										<Label text="New Session" styleClass="h2"></Label>
+										
+										<HBox spacing="8">
+											<children>
+												<Label text="symbol"></Label>
+												<ComboBox fx:id="trainSymbol">
+													<value><String fx:value="AAPL"/></value>
+												</ComboBox>
+											</children>
+										</HBox>
+										<HBox spacing="8">
+											<children>
+												<Label text="bar width"></Label>
+												<ComboBox fx:id="trainBarWidth">
+													<value><String fx:value="1day"/></value>
+												</ComboBox>
+											</children>
+										</HBox>
+										<HBox spacing="8">
+											<children>
+												<Label text="sample size"></Label>
+												<ComboBox fx:id="trainSampleSize">
+													<value><Integer fx:value="7"/></value>
+												</ComboBox>
+												<Label text="bars"></Label>
+											</children>
+										</HBox>
+										<HBox spacing="8">
+											<children>
+												<Label text="max lookback"></Label>
+												<TextField fx:id="trainMaxLookback" text="24"></TextField>
+												<Label text="months"></Label>
+											</children>
+										</HBox>
+										<HBox spacing="8">
+											<children>
+												<Label text="reps"></Label>
+												<TextField fx:id="trainSampleCount" text="30"></TextField>
+											</children>
+										</HBox>
+										<Button fx:id="trainButton" text="train"></Button>
+									</children>
+								</VBox>
 							</children>
 						</HBox>
+					</top>
+					<bottom>
+						<!-- general settings -->
+						<HBox>
+							<children>
+								<VBox alignment="TOP_LEFT" spacing="4">
+									<children>
+										<Label text="App Settings" styleClass="h2"></Label>
+										<HBox spacing="8">
+											<children>
+												<ToggleButton fx:id="saveSounds" selected="false" text="save sounds"></ToggleButton>
+											</children>
+										</HBox>
+									</children>
+								</VBox>
+							</children>
+						</HBox>
+					</bottom>
+				</BorderPane>
+			</center>
+			<right>
+				<!-- user stats -->
+				<VBox fx:id="userStats" spacing="8" alignment="TOP_RIGHT" styleClass="h3">
+					<padding><Insets right="4" left="4"/></padding>
+					<children>
+						<Label fx:id="userName" text="username"></Label>
+						<Label fx:id="userAccuracy" text="accuracy"></Label>
+						<Label fx:id="userSince" text="since"></Label>
 					</children>
 				</VBox>
-			</children>
-		</HBox>
+			</right>
+		</BorderPane>
 	</children>
 </VBox>

@@ -45,3 +45,7 @@ Toolbar Label {
 	-fx-font-size: 16px;
 	-fx-padding: 2 0 4 0;
 }
+
+.rounded {
+	-fx-border-radius: 8px;
+}

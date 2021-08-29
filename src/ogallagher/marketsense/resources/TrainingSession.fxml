@@ -11,6 +11,7 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.BorderPane?>
+<?import javafx.geometry.Insets?>
 
 <VBox xmlns:fx="http://javafx.com/fxml/1" spacing="8" alignment="TOP_CENTER" fillWidth="true">
 	<stylesheets>
@@ -27,90 +28,123 @@
 			</children>
 		</HBox>
 		
-		<!-- session config -->
-		<GridPane hgap="8" vgap="8">
-			<children>
-				<!-- row 0 -->
-				<Label text="security" GridPane.columnIndex="0" GridPane.rowIndex="0"></Label>
-				<Label fx:id="security" styleClass="data-value" GridPane.columnIndex="1" GridPane.rowIndex="0"></Label>
-				
-				<Label text="sample" GridPane.columnIndex="2" GridPane.rowIndex="0"></Label>
-				<Label fx:id="sampleId" styleClass="data-value" text="1" GridPane.columnIndex="3" GridPane.rowIndex="0"></Label>
-				
-				<Label text="reps" GridPane.columnIndex="4" GridPane.rowIndex="0"></Label>
-				<Label fx:id="sampleCount" styleClass="data-value" GridPane.columnIndex="5" GridPane.rowIndex="0"></Label>
-				
-				<!-- row 1 -->
-				<Label text="trade bars" GridPane.columnIndex="0" GridPane.rowIndex="1"></Label>
-				<Label fx:id="sampleSize" styleClass="data-value" GridPane.columnIndex="1" GridPane.rowIndex="1"></Label>
-				
-				<Label text="trade bar width" GridPane.columnIndex="2" GridPane.rowIndex="1"></Label>
-				<Label fx:id="barWidth" styleClass="data-value" GridPane.columnIndex="4" GridPane.rowIndex="1"></Label>
-				
-				<!-- row 2 -->
-			</children>
-		</GridPane>
+		<!-- stats bar -->
+		<BorderPane>
+			<padding><Insets bottom="8"/></padding>
+			<left>
+				<!-- session config and state -->
+				<GridPane hgap="8" vgap="8">
+					<children>
+						<!-- row 0 -->
+						<Label text="security" GridPane.columnIndex="0" GridPane.rowIndex="0"></Label>
+						<Label fx:id="security" styleClass="data-value" GridPane.columnIndex="1" GridPane.rowIndex="0"></Label>
+						
+						<Label text="sample" GridPane.columnIndex="2" GridPane.rowIndex="0"></Label>
+						<Label fx:id="sampleId" styleClass="data-value" text="1" GridPane.columnIndex="3" GridPane.rowIndex="0"></Label>
+						
+						<Label text="reps" GridPane.columnIndex="4" GridPane.rowIndex="0"></Label>
+						<Label fx:id="sampleCount" styleClass="data-value" GridPane.columnIndex="5" GridPane.rowIndex="0"></Label>
+						
+						<!-- row 1 -->
+						<Label text="trade bars" GridPane.columnIndex="0" GridPane.rowIndex="1"></Label>
+						<Label fx:id="sampleSize" styleClass="data-value" GridPane.columnIndex="1" GridPane.rowIndex="1"></Label>
+						
+						<Label text="trade bar width" GridPane.columnIndex="2" GridPane.rowIndex="1"></Label>
+						<Label fx:id="barWidth" styleClass="data-value" GridPane.columnIndex="4" GridPane.rowIndex="1"></Label>
+					</children>
+				</GridPane>
+			</left>
+			<right>
+				<!--  score -->
+				<GridPane hgap="8" vgap="8">
+					<children>
+						<!--  row 0 -->
+						<Label text="score" GridPane.columnIndex="0" GridPane.rowIndex="0"></Label>
+						<Label fx:id="scoreLast" text="0.0" styleClass="data-value" GridPane.columnIndex="1" GridPane.rowIndex="0"></Label>
+						<Label text="\%" GridPane.columnIndex="2" GridPane.rowIndex="0"></Label>
+						
+						<!-- row 1 -->
+						<Label text="average score" GridPane.columnIndex="0" GridPane.rowIndex="1"></Label>
+						<Label fx:id="score" text="0.0" styleClass="data-value" GridPane.columnIndex="1" GridPane.rowIndex="1"></Label>
+						<Label text="\%" GridPane.columnIndex="2" GridPane.rowIndex="1"></Label>
+					</children>
+				</GridPane>
+			</right>
+		</BorderPane>
 		
 		<!-- training -->
-		<HBox fx:id="trainingControls" spacing="8" alignment="CENTER" fillHeight="true">
-			<children>
+		<BorderPane fx:id="trainingControls">
+			<left>
 				<!-- col 1 -->
-				<VBox spacing="8" alignment="CENTER_LEFT">
-					<children>
-						<Button fx:id="playSound" text="play sound"></Button>
-						
-						<Label text="guess color"></Label>
-						<HBox>
+				<BorderPane>
+					<top>
+						<VBox alignment="CENTER" fillWidth="true">
 							<children>
+								<Button fx:id="playSound" text="play sound"></Button>
+							</children>
+						</VBox>
+					</top>
+					<center>
+						<!-- color guess -->
+						<VBox alignment="CENTER" spacing="4">
+							<children>
+								<Label text="guess color"></Label>
+								
 								<Slider 
 									fx:id="colorGuess" 
+									prefWidth="128"
 									min="0" max="1" value="0.5"
 									snapToTicks="true" showTickMarks="true" showTickLabels="false" majorTickUnit="0.1" 
 									orientation="HORIZONTAL">
 								</Slider>
 								
-								<Region fx:id="colorGuessTile" styleClass="color-tile" prefWidth="64" prefHeight="64"></Region>
-								
+								<Region 
+									fx:id="colorGuessTile" styleClass="color-tile" 
+									prefWidth="64" maxWidth="64" prefHeight="64">
+								</Region>
+							</children>
+						</VBox>
+					</center>
+					<bottom>
+						<HBox spacing="8">
+							<children>
 								<Button fx:id="colorGuessSubmit" text="submit"></Button>
+								<Button fx:id="nextSample" text="next sample" disable="false"></Button>
 							</children>
 						</HBox>
-						
-						<Button fx:id="nextSample" text="next sample" disable="false"></Button>
-					</children>
-				</VBox>
-				
+					</bottom>
+				</BorderPane>
+			</left>
+			<right>
 				<!-- col 2 -->
-				<VBox spacing="8" alignment="CENTER_RIGHT" fillWidth="true">
+				<VBox spacing="8" alignment="CENTER_RIGHT">
 					<children>
-						<GridPane hgap="8" vgap="8">
+						<StackPane alignment="BOTTOM_RIGHT">
 							<children>
-								<Label text="score" GridPane.columnIndex="0" GridPane.rowIndex="0"></Label>
-								<Label fx:id="scoreLast" text="0.0" styleClass="data-value" GridPane.columnIndex="1" GridPane.rowIndex="0"></Label>
-								<Label text="\%" GridPane.columnIndex="2" GridPane.rowIndex="0"></Label>
+								<!-- market data graph -->
+								<BorderPane fx:id="sampleGraph"></BorderPane>
 								
-								<Label text="average score" GridPane.columnIndex="0" GridPane.rowIndex="1"></Label>
-								<Label fx:id="score" text="0.0" styleClass="data-value" GridPane.columnIndex="1" GridPane.rowIndex="1"></Label>
-								<Label text="\%" GridPane.columnIndex="2" GridPane.rowIndex="1"></Label>
+								<!-- true color -->
+								<VBox alignment="BOTTOM_CENTER" maxWidth="64">
+									<children>
+										<Label text="true color"></Label>
+										<Slider 
+											fx:id="colorTrue" disable="true"
+											min="0" max="1" value="0.5" orientation="HORIZONTAL">
+										</Slider>
+										
+										<Region 
+											fx:id="colorTrueTile" styleClass="color-tile" 
+											prefWidth="64" prefHeight="32" maxWidth="32">
+										</Region>
+									</children>
+								</VBox>
 							</children>
-						</GridPane>
-						
-						<Label text="true color"></Label>
-						<HBox>
-							<children>
-								<Slider 
-									fx:id="colorTrue" disable="true"
-									min="0" max="1" value="0.5" orientation="HORIZONTAL">
-								</Slider>
-								
-								<Region fx:id="colorTrueTile" styleClass="color-tile" prefWidth="64" prefHeight="64"></Region>
-							</children>
-						</HBox>
-						
-						<BorderPane fx:id="sampleGraph"></BorderPane>
+						</StackPane>
 					</children>
 				</VBox>
-			</children>
-		</HBox>
+			</right>
+		</BorderPane>
 	</children>
 </VBox>
 

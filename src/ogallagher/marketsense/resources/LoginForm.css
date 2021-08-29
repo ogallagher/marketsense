@@ -6,9 +6,5 @@ Owen Gallagher
 */
 
 #loginForm {
-	-fx-hgap: 4;
-	-fx-vgap: 8;
-	
-	-fx-background-color: #aaaaaa;
 	-fx-font-size: 16px;
 }

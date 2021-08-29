@@ -3,28 +3,24 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.control.*?>
 <?import java.net.URL?>
+<?import javafx.scene.Group?>
+<?import javafx.geometry.Insets?>
 
-<VBox xmlns:fx="http://javafx.com/fxml/1">
+<VBox xmlns:fx="http://javafx.com/fxml/1" alignment="CENTER" fx:id="loginForm">
 	<stylesheets>
 		<URL value="@LoginForm.css" />
 	</stylesheets>
 	
 	<children>
 		<!-- title -->
-		<Label text="Login Form" styleClass="h1"></Label>
+		<Label text="Login Form" styleClass="h1" />
 		
-		<HBox fx:id="loginForm" spacing="8" alignment="CENTER">
-			<children>
-				<ListView fx:id="registeredUsers"></ListView>
-				
-				<GridPane>
-					<children>
-						<Label text="username:" GridPane.columnIndex="0" GridPane.rowIndex="0"></Label>
-						<TextField fx:id="loginUsername" GridPane.columnIndex="0" GridPane.rowIndex="1" GridPane.columnSpan="2"></TextField>
-					</children>
-				</GridPane>
-			</children>
-		</HBox>
+		<!-- username selection -->
+		<TextField fx:id="loginUsername" promptText="username">
+			<VBox.margin><Insets bottom="8"/></VBox.margin>
+		</TextField>
+		
+		<ListView fx:id="registeredUsers" />
 	</children>
 </VBox>
 

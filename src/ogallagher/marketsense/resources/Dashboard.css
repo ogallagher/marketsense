@@ -7,6 +7,7 @@ Owen Gallagher
 
 #userStats {
 	-fx-background-color: #ffffff;
+	-fx-font-weight: bold;
 }
 
 Button {
@@ -28,5 +29,5 @@ ToggleButton:hover {
 }
 
 ToggleButton:selected {
-	-fx-background-color: #140092;
+	-fx-background-color: #435cff;
 }

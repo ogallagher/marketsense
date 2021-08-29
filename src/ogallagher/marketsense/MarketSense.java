@@ -111,6 +111,12 @@ public class MarketSense {
 	 */
 	private static File PARENT_DIR;
 	/**
+	 * The read-only resources directory.
+	 * 
+	 * @see #RESOURCES_DIR_RW
+	 */
+	private static String RESOURCES_DIR_R = "resources/";
+	/**
 	 * The read-write resources directory.<br><br>
 	 * 
 	 * In development, the {@code resources/} directory with program input and output files is in the same location as
@@ -214,7 +220,7 @@ public class MarketSense {
 			PARENT_DIR = new File(MarketSense.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getParentFile();
 			System.out.println("DEBUG marketsense parent dir = " + PARENT_DIR.getPath());
 			
-			RESOURCES_DIR_RW = new File(PARENT_DIR, "resources/");
+			RESOURCES_DIR_RW = new File(PARENT_DIR, RESOURCES_DIR_R);
 			// ensure rw resources exists
 			if (RESOURCES_DIR_RW.mkdir()) {
 				System.out.println("INFO created new rw resources dir at " + RESOURCES_DIR_RW.getPath());
@@ -255,7 +261,7 @@ public class MarketSense {
 	 * @return {@code true} if the copy was created or if the copy already exists.
 	 */
 	private static boolean createWritableCopy(String relReadablePath) {
-		InputStream readable = MarketSense.class.getResourceAsStream("resources/" + relReadablePath);
+		InputStream readable = MarketSense.class.getResourceAsStream(RESOURCES_DIR_R + relReadablePath);
 		File writable = new File(RESOURCES_DIR_RW, relReadablePath);
 		
 		try {
@@ -328,8 +334,8 @@ public class MarketSense {
 	
 	public static class MarketSenseGUI extends Application {
 		private static Stage mainWindow = null;
-		private static int MAIN_WINDOW_WIDTH_INIT = 600;
-		private static int MAIN_WINDOW_HEIGHT_INIT = 500;
+		private static int MAIN_WINDOW_WIDTH_INIT = 800;
+		private static int MAIN_WINDOW_HEIGHT_INIT = 510;
 		
 		/**
 		 * Provide static access to the {@code HostServices} instance of the latest {@code MarketSenseGUI} launched.
