@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.Period;
 import java.time.temporal.TemporalUnit;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
@@ -49,6 +50,11 @@ import ogallagher.twelvedata_client_java.TwelvedataInterface.TimeSeries;
 public class TrainingSession {
 	public static final String DB_TABLE = "TrainingSession";
 	
+	/**
+	 * The confidence level to use when returning a session score confidence interval.
+	 */
+	private static ConfidenceZscore scoreIntervalConfidence = ConfidenceZscore.NINETY_FIVE;
+	
 	public static final String DB_COL_ID = "id";
 	@EmbeddedId
 	private TrainingSessionId id;
@@ -84,8 +90,32 @@ public class TrainingSession {
 	private int maxLookbackMonths;
 	
 	public static final String DB_COL_SCORE = "score";
+	/**
+	 * The accuracy score of the user for this session, calculated as an average of all scores
+	 * per market sample.
+	 * 
+	 * @see MarketSample#evalGuess(double)
+	 */
 	@Convert(converter=DoublePropertyPersister.class)
 	private DoubleProperty score = new SimpleDoubleProperty(0);
+	
+	public static final String DB_COL_SCORE_DEVIATION = "scoreDeviation";
+	/**
+	 * <p>The standard deviation of accuracy scores per market sample throughout the session. This will be used to
+	 * create a score confidence interval following the formula:</p>
+	 * 
+	 * <p>
+	 * {@code score +- (z_score * scoreDeviation/sampleCount)}
+	 * </p>
+	 * 
+	 * <p>where {@code z_score} is depends on the confidence level.
+	 * 
+	 * @see #score
+	 * @see #sampleCount
+	 * @see #scoreIntervalConfidence
+	 */
+	@Convert(converter=DoublePropertyPersister.class)
+	private DoubleProperty scoreDeviation = new SimpleDoubleProperty(0);
 	
 	/**
 	 * Earliest datetime where a sample can be taken.
@@ -100,10 +130,16 @@ public class TrainingSession {
 	private LocalDateTime before;
 	
 	/**
-	 * Current sample number, in training progress, between {@code 0} and {@link sampleCount}.
+	 * Current sample number, in training progress, between {@code 0} and {@link sampleCount sampleCount-1}.
 	 */
 	@Transient
 	private IntegerProperty sampleId = new SimpleIntegerProperty(0);
+	
+	/**
+	 * List of accuracy scores from each sample. Used to calculate {@link #scoreDeviation}.
+	 */
+	@Transient
+	private ArrayList<Double> sampleScores;
 	
 	@Transient
 	private MarketSample sample;
@@ -163,6 +199,8 @@ public class TrainingSession {
 				}
 			}
 		});
+		
+		sampleScores = new ArrayList<>(this.sampleCount);
 		
 		LocalDateTime now = id.getStart();
 		after = now.minusMonths(this.maxLookbackMonths);
@@ -373,9 +411,35 @@ public class TrainingSession {
 		return result;
 	}
 	
+	/**
+	 * Given a new guess score corresponding to a market sample, update {@link #score} and {@link #scoreDeviation}.
+	 * 
+	 * @param guessScore Guess score, usually calculated with {@link MarketSample#evalGuess(double)}.
+	 */
 	public void updateScore(double guessScore) {
 		int i = sampleId.get();
+		
+		// update score mean
 		score.set(((score.get() * i) + guessScore) / (i+1));
+		
+		// update score std deviation: sqrt of sum of square diffs with mean
+		sampleScores.add(guessScore);
+		
+		double sumSquareDiffs = 0;
+		for (Double s : sampleScores) {
+			sumSquareDiffs += Math.pow(s-score.get(), 2);
+		}
+		
+		scoreDeviation.set(Math.sqrt(sumSquareDiffs));
+	}
+	
+	/**
+	 * <p>{@code radius = confidence.getZscore() * deviation}</p>
+	 * 
+	 * @return Score confidence interval radius, as in: {@code interval = mean +- radius}.
+	 */
+	public double getScoreIntervalRadius() {
+		return scoreIntervalConfidence.getZscore() * scoreDeviation.get();
 	}
 	
 	public MarketSample getSample() {
@@ -404,6 +468,23 @@ public class TrainingSession {
 	
 	public ReadOnlyDoubleProperty getScoreProperty() {
 		return score;
+	}
+	
+	public ReadOnlyDoubleProperty getScoreDeviationProperty() {
+		return scoreDeviation;
+	}
+	
+	public static ConfidenceZscore getScoreIntervalConfidence() {
+		return scoreIntervalConfidence;
+	}
+	
+	/**
+	 * Set confidence level for {@link #getScoreIntervalRadius()}.
+	 * 
+	 * @param scoreIntervalConfidence Confidence level.
+	 */
+	public static void setScoreIntervalConfidence(ConfidenceZscore scoreIntervalConfidence) {
+		TrainingSession.scoreIntervalConfidence = scoreIntervalConfidence;
 	}
 	
 	public int getMaxLookbackMonths() {
@@ -438,6 +519,62 @@ public class TrainingSession {
 					item.security.getSymbol() + " --- " + 
 					((float) (item.score.get()*100)) + "%"
 				);
+			}
+		}
+	}
+	
+	/**
+	 * <p>Calculates zscores for common confidence levels. Note that this implies an infinite sample size, and therefore
+	 * does not account for degrees of freedom.</p>
+	 * 
+	 * <p>Zscores taken from <a href="https://www.statisticshowto.com/tables/t-distribution-table/">this table</a>.</p>
+	 * 
+	 * @author Owen Gallagher
+	 * @since 2021-08-29
+	 */
+	private static enum ConfidenceZscore {
+		/**
+		 * 90% (0.9) confidence level.
+		 */
+		NINETY(0.9),
+		/**
+		 * 95% (0.95) confidence level.
+		 */
+		NINETY_FIVE(0.95),
+		/**
+		 * 99% (0.99) confidence level.
+		 */
+		NINETY_NINE(0.99);
+		
+		private double confidence;
+		
+		private ConfidenceZscore(double confidence) {
+			this.confidence = confidence;
+		}
+		
+		/**
+		 * @return The numeric value of this confidence level, between 0 and 1.
+		 */
+		public double getConfidence() {
+			return confidence;
+		}
+		
+		/**
+		 * @return The corresponding zscore for this confidence level.
+		 */
+		public double getZscore() {
+			switch (this) {
+				case NINETY:
+					return 1.645;
+					
+				case NINETY_FIVE:
+					return 1.96;
+					
+				case NINETY_NINE:
+					return 2.576;
+					
+				default:
+					throw new IllegalArgumentException("unknown zscore for confidence " + confidence);
 			}
 		}
 	}

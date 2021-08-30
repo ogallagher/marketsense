@@ -721,15 +721,48 @@ public class MarketSense {
 					});
 					System.out.println("DEBUG bound sample id");
 					
-					// load overall score (should be 0.5)
+					// load average score (should be 0.5) and score interval
 					Label score = (Label) sessionRoot.lookup("#score");
+					
 					session.getScoreProperty().addListener(new ChangeListener<Number>() {
 						@Override
 						public void changed(ObservableValue<? extends Number> v, Number ov, Number nv) {
-							score.setText(Float.toString(nv.floatValue() * 100));
+							float scorePct = nv.floatValue() * 100;
+							
+							score.setText(String.valueOf(scorePct));
 						}
 					});
 					System.out.println("DEBUG loaded average score");
+					
+					// load score confidence interval
+					Label scoreLow = (Label) sessionRoot.lookup("#scoreIntervalLow");
+					Label scoreHigh = (Label) sessionRoot.lookup("#scoreIntervalHigh");
+					
+					session.getScoreDeviationProperty().addListener(new ChangeListener<Number>() {
+						@Override
+						public void changed(ObservableValue<? extends Number> v, Number ov, Number nv) {
+							float scorePct = session.getScoreProperty().floatValue() * 100;
+							float intervalRadius = (float) session.getScoreIntervalRadius() * 100;
+							
+							if (intervalRadius == 0) {
+								scoreLow.setText("0");
+								scoreHigh.setText("100");
+							}
+							else {
+								float low = scorePct - intervalRadius;
+								if (low < 0) {
+									low = 0;
+								}
+								float high = scorePct + intervalRadius;
+								if (high > 100) {
+									high = 100;
+								}
+								
+								scoreLow.setText(String.valueOf(low));
+								scoreHigh.setText(String.valueOf(high));
+							}
+						}
+					});
 					
 					// load config params
 					loadConfig(sessionRoot);

@@ -67,6 +67,12 @@
 						<Label text="average score" GridPane.columnIndex="0" GridPane.rowIndex="1"></Label>
 						<Label fx:id="score" text="0.0" styleClass="data-value" GridPane.columnIndex="1" GridPane.rowIndex="1"></Label>
 						<Label text="\%" GridPane.columnIndex="2" GridPane.rowIndex="1"></Label>
+						
+						<!-- row 2 -->
+						<Label text="score confidence interval" GridPane.columnIndex="0" GridPane.rowIndex="2" />
+						<Label fx:id="scoreIntervalLow" text="0.0" styleClass="data-value" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+						<Label text="––" GridPane.columnIndex="2" GridPane.rowIndex="2" />
+						<Label fx:id="scoreIntervalHigh" text="0.0" styleClass="data-value" GridPane.columnIndex="3" GridPane.rowIndex="2" />
 					</children>
 				</GridPane>
 			</right>

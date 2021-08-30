@@ -115,23 +115,16 @@ public class MarketSample {
 				
 				// constrain to -1 .. 1 proportion of last price, normalize to 0 .. 1
 				futureMovement = (((future - last) / last) + 1) / 2;
-				if (futureMovement > 1) {
-					futureMovement = 1;
-				}
 				break;
 				
 			case DELTA_SAMPLE_RANGE:
-				float deltaMin = Float.POSITIVE_INFINITY;
-				float deltaMax = Float.NEGATIVE_INFINITY;
+				float deltaMax = 0;
 				
 				float a = bars.get(0).getClose();
 				for (int i=1; i<bars.size(); i++) {
 					float b = bars.get(i).getClose();
-					float d = b-a;
+					float d = Math.abs(b-a);
 					
-					if (d < deltaMin) {
-						deltaMin = d;
-					}
 					if (d > deltaMax) {
 						deltaMax = d;
 					}
@@ -139,15 +132,20 @@ public class MarketSample {
 					a = b;
 				}
 				
-				// normalize future-last delta between min and max
-				futureMovement = (this.future.getClose()-a - deltaMin) / (deltaMax-deltaMin);
-				if (futureMovement > 1) {
-					futureMovement = 1;
-				}
-				if (futureMovement < 0) {
-					futureMovement = 0;
-				}
+				// normalize future-last delta between -max and max
+				futureMovement = (this.future.getClose()-a) / deltaMax;
+				
+				// map -1 .. 1 to 0 .. 1
+				futureMovement = (futureMovement+1) / 2;
 				break;
+		}
+		
+		// limit future movement to 0 .. 1
+		if (futureMovement > 1) {
+			futureMovement = 1;
+		}
+		else if (futureMovement < 0) {
+			futureMovement = 0;
 		}
 		
 		// extract raw market datapoints
@@ -165,7 +163,8 @@ public class MarketSample {
 	}
 	
 	/**
-	 * Calculate the accuracy/score of a guess.
+	 * Calculate the accuracy/score of a guess. Assumes that {@link #futureMovement} and {@code guess} are both
+	 * between 0 and 1.
 	 * 
 	 * @param guess
 	 * 
@@ -228,7 +227,7 @@ public class MarketSample {
 		 */
 		PCT_LAST_PX,
 		/**
-		 * Normalize within range of price differences for all neighbors in the sample.
+		 * Normalize within range of unsigned price differences for all neighbors in the sample.
 		 */
 		DELTA_SAMPLE_RANGE
 	}
