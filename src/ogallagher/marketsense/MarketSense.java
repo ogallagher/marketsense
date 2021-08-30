@@ -88,6 +88,7 @@ import ogallagher.marketsense.persistent.TrainingSessionId;
 import ogallagher.marketsense.persistent.TrainingSessionType;
 import ogallagher.marketsense.test.Test;
 import ogallagher.marketsense.test.TestDatabase;
+import ogallagher.marketsense.test.TestDatetimeUtils;
 import ogallagher.marketsense.test.TestMarketSynth;
 import ogallagher.marketsense.util.PointFilter;
 import ogallagher.temp_fx_logger.System;
@@ -409,7 +410,7 @@ public class MarketSense {
 			
 			// run tests
 			if (runTests) {
-				runTests(false, false, false);
+				runTests(false, false, false, false);
 			}
 			
 			// load login form
@@ -1437,8 +1438,9 @@ public class MarketSense {
 	 * @param base Basic test.
 	 * @param database Database test. 
 	 * @param marketSynth Market sound synth test.
+	 * @param datetimeUtils Datetime utility methods test.
 	 */
-	public static void runTests(boolean base, boolean database, boolean marketSynth) {
+	public static void runTests(boolean base, boolean database, boolean marketSynth, boolean datetimeUtils) {
 		System.out.println("running tests");
 		
 		if (base) {
@@ -1449,6 +1451,9 @@ public class MarketSense {
 		}
 		if (marketSynth) {
 			new TestMarketSynth().evaluate(false);
+		}
+		if (datetimeUtils) {
+			new TestDatetimeUtils().evaluate(false);
 		}
 	}
 	

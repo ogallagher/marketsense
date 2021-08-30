@@ -34,6 +34,7 @@ import javafx.beans.value.ObservableValue;
 import javafx.scene.control.ListCell;
 import ogallagher.marketsense.MarketSample;
 import ogallagher.marketsense.MarketSynth;
+import ogallagher.marketsense.util.DatetimeUtils;
 import ogallagher.twelvedata_client_java.TwelvedataClient;
 import ogallagher.twelvedata_client_java.TwelvedataInterface.BarInterval;
 import ogallagher.twelvedata_client_java.TwelvedataInterface.Failure;
@@ -202,10 +203,20 @@ public class TrainingSession {
 		
 		sampleScores = new ArrayList<>(this.sampleCount);
 		
+		// calculate market data universe bounds: after .. before
 		LocalDateTime now = id.getStart();
+		
 		after = now.minusMonths(this.maxLookbackMonths);
+		
+		// subtract to prevent a past "future" passing present
 		before = now.minusDays(2);
+		// subtract the duration of one sample size
 		before = BarInterval.offsetBars(before, barWidth, -sampleSize);
+		
+		// update universe bounds to avoid weekend (valid as of NYSE, NASDAQ)
+		// note that eventually bounds could be better controlled per exchange calendar adapting something like github.com/gerrymanoim/exchange_calendars
+		after = DatetimeUtils.forwardFromWeekend(after);
+		before = DatetimeUtils.backwardFromWeekend(before);
 	}
 	
 	/**
