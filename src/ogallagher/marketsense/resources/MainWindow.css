@@ -12,13 +12,15 @@ Owen Gallagher
     -fx-background-color: #fff;
 }
 
-Toolbar {
-	-fx-background-color: #333;
-	-fx-padding: 4 4 4 4;
+/*
+MenuBar {
+	-fx-background-color: #333333;
 }
+*/
 
-Toolbar Label {
-	-fx-text-fill: #fff;
+MenuItem {
+	-fx-background-color: #555555;
+	-fx-text-fill: #ffffff;
 }
 
 #content {

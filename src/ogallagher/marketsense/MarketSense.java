@@ -52,6 +52,9 @@ import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.Slider;
 import javafx.scene.control.TextField;
@@ -362,7 +365,7 @@ public class MarketSense {
 			mainWindow.show();
 			
 			Scene mainScene = new Scene(
-				(Parent) FXMLLoader.load(MarketSense.class.getResource("resources/MainWindow.fxml"))
+				(Parent) FXMLLoader.load(MarketSense.class.getResource(RESOURCES_DIR_R + "MainWindow.fxml"))
 			);
 			mainWindow.setScene(mainScene);
 			
@@ -373,6 +376,28 @@ public class MarketSense {
 					Platform.exit();
 				}
 			});
+			
+			// menu bar controls
+			Menu viewMenu = new Menu("view");
+			
+			MenuItem consoleMenuItem = new MenuItem("console window");
+			consoleMenuItem.setOnAction(new EventHandler<ActionEvent>() {
+				@Override
+				public void handle(ActionEvent event) {
+					Stage consoleWindow = System.getConsoleWindow();
+					
+					if (consoleWindow.isShowing()) {
+						consoleWindow.hide();
+					}
+					else {
+						consoleWindow.show();
+					}
+				}
+			});
+			viewMenu.getItems().add(consoleMenuItem);
+			
+			MenuBar menuBar = (MenuBar) mainScene.lookup("#mainMenuBar");
+			menuBar.getMenus().add(viewMenu);
 			
 			// host services
 			hostServices = getHostServices();

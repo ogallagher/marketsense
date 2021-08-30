@@ -4,19 +4,19 @@
 <?import javafx.scene.control.*?>
 <?import java.net.URL?>
 <?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.Menu?>
 
 <BorderPane xmlns:fx="http://javafx.com/fxml/1" styleClass="root">
 	<stylesheets>
 		<URL value="@MainWindow.css" />
 	</stylesheets>
+	
 	<top>
-		<ToolBar>
-			<items>
-				<Label text="test label 1"></Label>
-				<Label text="test label 2"></Label>
-				<Label text="test label 3"></Label>
-			</items>
-		</ToolBar>
+		<MenuBar fx:id="mainMenuBar">
+		</MenuBar>
 	</top>
 	
 	<center>
