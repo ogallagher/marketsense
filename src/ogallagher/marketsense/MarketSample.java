@@ -30,6 +30,7 @@ public class MarketSample {
 	
 	private LocalDateTime start;
 	private LocalDateTime end;
+	private int barCount;
 	private String barWidth;
 	private ArrayList<TradeBar> bars;
 	private TradeBar future;
@@ -59,50 +60,132 @@ public class MarketSample {
 	}
 	
 	/**
-	 * 
-	 * @param security The security for which to fetch market data.
+	 * @param security The security whose market data to fetch.
 	 * 
 	 * @param start First market datapoint datetime.
 	 * 
-	 * @param end Last market datapoint datetime in the sample. Note this **does not** include the future bar,
+	 * @param end Last market datapoint datetime in the sample. Note this <b>does not</b> include the future bar,
 	 * which will determine the future movement for the sample.
+	 * 
+	 * @param barWidth Bar width string.
 	 */
 	public MarketSample(Security security, LocalDateTime start, LocalDateTime end, String barWidth) {
+		this(security, start, end, -1, barWidth);
+	}
+	
+	/**
+	 * @param security Security whose market data is fetched.
+	 * 
+	 * @param end Last market datapoint datetime in the sample. Note this <b>does not</b> include the future bar,
+	 * which will determine the future movement for the sample.
+	 * 
+	 * @param barCount Number of datapoints in the sample, <b>not</b> including the future bar.
+	 * 
+	 * @param barWidth Bar width string.
+	 */
+	public MarketSample(Security security, LocalDateTime end, int barCount, String barWidth) {
+		this(security, null, end, barCount, barWidth);
+	}
+	
+	/**
+	 * Full constructor, not public so as to prevent arg collisions. For example, where a defined time period can
+	 * conflict with {@code barCount}.
+	 * 
+	 * @param security
+	 * @param start
+	 * @param end
+	 * @param barCount
+	 * @param barWidth
+	 */
+	private MarketSample(Security security, LocalDateTime start, LocalDateTime end, int barCount, String barWidth) {
 		this.security = security;
 		this.start = start;
 		this.end = end;
+		this.barCount = barCount;
 		this.barWidth = barWidth;
 		this.bars = new ArrayList<TradeBar>();
 	}
 	
+	/**
+	 * @implNote This needs to be in descending order in order for the {@code endDate-barCount} version of the fetch to work, which
+	 * limits the result to only include the {@code barCount} first rows.
+	 * 
+	 * @param dbManager Database entity manager.
+	 * 
+	 * @return Database query to fetch a set of trade bars from the database, in 
+	 * <b>descending</b> chronological order.
+	 */
+	private Query createQuery(EntityManager dbManager) {
+		String qstr; 
+		Query query;
+		
+		if (start == null) {
+			qstr = 
+				"select t from %1$s t " + 
+				"where t.%2$s = :securitySymbol and t.%3$s = :securityExchange and t.%4$s = :barWidth " +
+				"and t.%5$s <= :end " +
+				"order by t.%5$s desc";
+			
+			query = dbManager.createQuery(
+				String.format(
+					qstr,
+					TradeBar.DB_TABLE,
+					TradeBar.DB_COMPCOL_ID + "." + TradeBarId.DB_COL_SECURITY + "." + Security.DB_COL_ID + "." + SecurityId.DB_COL_SYMBOL,
+					TradeBar.DB_COMPCOL_ID + "." + TradeBarId.DB_COL_SECURITY + "." + Security.DB_COL_ID + "." + SecurityId.DB_COL_EXCHANGE,
+					TradeBar.DB_COMPCOL_ID + "." + TradeBarId.DB_COL_WIDTH,
+					TradeBar.DB_COMPCOL_ID + "." + TradeBarId.DB_COL_DATETIME
+				)
+			);
+			
+			// note this includes one future bar
+			query.setMaxResults(barCount+1);
+			query.setParameter("end", end);
+		}
+		else {
+			qstr = 
+				"select t from %1$s t " + 
+				"where t.%2$s = :securitySymbol and t.%3$s = :securityExchange and t.%4$s = :barWidth " +
+				"and t.%5$s >= :start and t.%5$s <= :end " +
+				"order by t.%5$s desc";
+			
+			query = dbManager.createQuery(
+				String.format(
+					qstr,
+					TradeBar.DB_TABLE,
+					TradeBar.DB_COMPCOL_ID + "." + TradeBarId.DB_COL_SECURITY + "." + Security.DB_COL_ID + "." + SecurityId.DB_COL_SYMBOL,
+					TradeBar.DB_COMPCOL_ID + "." + TradeBarId.DB_COL_SECURITY + "." + Security.DB_COL_ID + "." + SecurityId.DB_COL_EXCHANGE,
+					TradeBar.DB_COMPCOL_ID + "." + TradeBarId.DB_COL_WIDTH,
+					TradeBar.DB_COMPCOL_ID + "." + TradeBarId.DB_COL_DATETIME
+				)
+			);
+			
+			query.setParameter("start", start);
+			// note this ideally includes one future bar, but will probably fall short due to weekends, 
+			// holidays, and closures
+			query.setParameter("end", BarInterval.offsetBars(end, barWidth, 1));
+		}
+		
+		query.setParameter("securitySymbol", security.getSymbol());
+		query.setParameter("securityExchange", security.getExchange());
+		query.setParameter("barWidth", barWidth);
+		
+		return query;
+	}
+
 	/**
 	 * Fetch the required market data from the database and create the resulting sound and color.
 	 */
 	@SuppressWarnings("unchecked")
 	public void prepare(EntityManager dbManager, MarketSynth marketSynth) {
 		// fetch market data from database
-		Query query = dbManager.createQuery(
-			String.format(
-				"select t from %1$s t " + 
-				"where t.%2$s = :securitySymbol and t.%3$s = :securityExchange and t.%4$s = :barWidth " +
-				"and t.%5$s >= :start and t.%5$s <= :end " +
-				"order by t.%5$s asc",
-				TradeBar.DB_TABLE,
-				TradeBar.DB_COMPCOL_ID + "." + TradeBarId.DB_COL_SECURITY + "." + Security.DB_COL_ID + "." + SecurityId.DB_COL_SYMBOL,
-				TradeBar.DB_COMPCOL_ID + "." + TradeBarId.DB_COL_SECURITY + "." + Security.DB_COL_ID + "." + SecurityId.DB_COL_EXCHANGE,
-				TradeBar.DB_COMPCOL_ID + "." + TradeBarId.DB_COL_WIDTH,
-				TradeBar.DB_COMPCOL_ID + "." + TradeBarId.DB_COL_DATETIME
-			)
-		);
-		query.setParameter("securitySymbol", security.getSymbol());
-		query.setParameter("securityExchange", security.getExchange());
-		query.setParameter("barWidth", barWidth);
-		query.setParameter("start", start);
-		query.setParameter("end", BarInterval.offsetBars(end, barWidth, 1)); // note this includes one future bar
+		Query query = createQuery(dbManager);
 		
 		// set bars
 		bars.clear();
 		bars.addAll((List<TradeBar>) query.getResultList());
+		
+		// sort chronologically ascending
+		bars.sort(null);
 		
 		// set future
 		future = bars.remove(bars.size()-1);
@@ -201,7 +284,12 @@ public class MarketSample {
 	
 	@Override
 	public String toString() {
-		return "MarketSample(security=" + security + ", start=" + start + ", end=" + end + ")";
+		if (start == null) {
+			return "MarketSample(security=" + security + ", end=" + end + ", barCount=" + barCount + ")";
+		}
+		else {
+			return "MarketSample(security=" + security + ", start=" + start + ", end=" + end + ")";
+		}
 	}
 	
 	/**

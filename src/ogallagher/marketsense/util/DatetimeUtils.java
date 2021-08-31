@@ -10,6 +10,11 @@ import java.time.LocalDateTime;
  * @since 2021-08-30
  */
 public class DatetimeUtils {
+	// unit conversion constants
+	public static final int SECS_PER_MIN = 60;
+	public static final int MINS_PER_HR = 60;
+	public static final int SECS_PER_HR = SECS_PER_MIN * MINS_PER_HR;
+	
 	/**
 	 * @param datetime Base datetime.
 	 * 

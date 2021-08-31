@@ -41,6 +41,24 @@ public class TradeBar implements Comparable<TradeBar> {
 	public static final String DB_COL_CLOSE = "close";
 	float close;
 	
+	private static DateTimeFormatter datetimeFormat;
+	
+	static {
+		// define datetimeFormatter
+		datetimeFormat = 
+			new DateTimeFormatterBuilder()
+			.append(DateTimeFormatter.ISO_LOCAL_DATE)
+			// T or space for delimiter between date and time
+			.optionalStart()
+			.appendLiteral('T')
+			.optionalEnd()
+			.optionalStart()
+			.appendLiteral(' ')
+			.optionalEnd()
+			.append(DateTimeFormatter.ISO_LOCAL_TIME)
+			.toFormatter();
+	}
+	
 	/**
 	 * Convert bars in a {@link TimeSeries} to {@code TradeBar} instances in a sorted list.
 	 * 
@@ -52,19 +70,20 @@ public class TradeBar implements Comparable<TradeBar> {
 		DateTimeFormatter dtFormat;
 		boolean isDatetime = false;
 		
+		// determine date/datetime format of a bar
 		String dt0 = timeSeries.values.get(0).datetime;
 		try {
 			LocalDate.parse(dt0, DateTimeFormatter.ISO_LOCAL_DATE);
 			dtFormat = DateTimeFormatter.ISO_LOCAL_DATE;
 			isDatetime = false;
 		}
-		catch (DateTimeParseException e1) {
+		catch (DateTimeParseException eDate) {
 			try {
-				LocalDateTime.parse(dt0, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-				dtFormat = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+				LocalDateTime.parse(dt0, datetimeFormat);
+				dtFormat = datetimeFormat;
 				isDatetime = true;
 			}
-			catch (DateTimeParseException e2) {
+			catch (DateTimeParseException eDatetime) {
 				System.out.println("failed to parse date/datetime of format " + dt0);
 				return null;
 			}

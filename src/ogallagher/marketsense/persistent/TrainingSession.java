@@ -76,9 +76,17 @@ public class TrainingSession {
 	private Security security;
 	
 	public static final String DB_COL_BAR_WIDTH = "barWidth";
+	/**
+	 * The width of a trade bar, which is a valid {@code BarInterval} value.
+	 * 
+	 * @see BarInterval
+	 */
 	private String barWidth;
 	
 	public static final String DB_COL_SAMPLE_SIZE = "sampleSize";
+	/**
+	 * Number of data points (ex. trade bars) in a sample.
+	 */
 	private int sampleSize;
 	
 	public static final String DB_COL_SAMPLE_COUNT = "sampleCount";
@@ -222,8 +230,8 @@ public class TrainingSession {
 	/**
 	 * Creates a new market sample if the training session is not complete. Otherwise, {@code null} is returned.
 	 * 
-	 * @param dbManager
-	 * @param marketSynth
+	 * @param dbManager Persistence entity manager for accessing the database.
+	 * @param marketSynth Market data sound synthesizer.
 	 * @return The new market sample, or {@code null} if the training session was completed.
 	 */
 	public MarketSample nextSample(EntityManager dbManager, MarketSynth marketSynth) {
@@ -233,11 +241,10 @@ public class TrainingSession {
 		}
 		
 		if (!complete.get()) {
-			int sampleOffsetHours = (int) (Math.random() * (Duration.between(after, before).getSeconds()/(3600)));
-			LocalDateTime start = after.plusHours(sampleOffsetHours);
-			LocalDateTime end = BarInterval.offsetBars(start, barWidth, sampleSize);
+			int sampleOffsetHours = (int) (Math.random() * (Duration.between(after, before).getSeconds()/(DatetimeUtils.SECS_PER_HR)));
+			LocalDateTime end = BarInterval.offsetBars(after.plusHours(sampleOffsetHours), barWidth, sampleSize);
 			
-			sample = new MarketSample(security, start, end, barWidth);
+			sample = new MarketSample(security, end, sampleSize, barWidth);
 			sample.prepare(dbManager, marketSynth);
 			
 			System.out.println("DEBUG prepared next training sample " + sample);

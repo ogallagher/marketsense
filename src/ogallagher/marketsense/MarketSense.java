@@ -579,7 +579,7 @@ public class MarketSense {
 				ComboBox<String> barWidthDropdown = (ComboBox<String>) dashboard.lookup("#trainBarWidth");
 				barWidthDropdown.setValue(properties.getProperty(PROP_TRAIN_BAR_WIDTH, BarInterval.DY_1));
 				
-				// current supported bar widths between 1 hour and 1 day
+				// current allowed bar widths between 1 hour and 1 day
 				HashSet<String> barWidths = new HashSet<String>();
 				for (String width : new String[] {
 					BarInterval.HR_1,
