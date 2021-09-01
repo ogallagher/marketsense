@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -107,7 +108,7 @@ public class MarketSense {
 	/**
 	 * Program version string.
 	 */
-	public static final String VERSION = "0.1.2";
+	public static final String VERSION = "0.1.3";
 	
 	/**
 	 * Path to program parent directory. In development, this is the parent folder of the one containing 
@@ -119,7 +120,7 @@ public class MarketSense {
 	 * 
 	 * @see #RESOURCES_DIR_RW
 	 */
-	private static String RESOURCES_DIR_R = "resources/";
+	private final static String RESOURCES_DIR_R = "resources/";
 	/**
 	 * The read-write resources directory.<br><br>
 	 * 
@@ -135,6 +136,10 @@ public class MarketSense {
 	 * Path to program properties file.
 	 */
 	private static File PROPERTIES_FILE;
+	/**
+	 * The markets resources directory name.
+	 */
+	private static final String MARKETS_DIR = "markets/";
 	/**
 	 * Path to NYSE symbols list.
 	 */
@@ -235,19 +240,34 @@ public class MarketSense {
 			
 			// rw resource locations
 			String propertiesFile = "config.properties";
-			createWritableCopy(propertiesFile);
+			
+			if (MarketSense.class.getResource(RESOURCES_DIR_R + propertiesFile) != null) {
+				// readable config.properties exists; create writable copy
+				createWritableCopy(propertiesFile);
+			}
+			else {
+				// config.properties not found in readable resources; copy from config_dummy.properties
+				String dummyPropertiesFile = "config_dummy.properties";
+				System.out.println(
+					"WARNING read-only " + propertiesFile + " not found, attempting creation from " + dummyPropertiesFile
+				);
+				
+				createWritableCopy(dummyPropertiesFile, propertiesFile);
+			}
+			
+			// result should have a writable config properties file in resources/
 			PROPERTIES_FILE = new File(RESOURCES_DIR_RW, propertiesFile);
 			
 			// create rw resources/markets
-			File marketsDirRW = new File(RESOURCES_DIR_RW, "markets/");
+			File marketsDirRW = new File(RESOURCES_DIR_RW, MARKETS_DIR);
 			marketsDirRW.mkdir();
 			
 			// asset symbols lists
-			String symbolsNYSEFile = "markets/NYSE_symbols.txt";
+			String symbolsNYSEFile = MARKETS_DIR + "NYSE_symbols.txt";
 			createWritableCopy(symbolsNYSEFile);
 			SYMBOLS_NYSE_FILE = new File(RESOURCES_DIR_RW, symbolsNYSEFile);
 			
-			String symbolsNASDAQFile = "markets/NASDAQ_symbols.txt";
+			String symbolsNASDAQFile = MARKETS_DIR + "NASDAQ_symbols.txt";
 			createWritableCopy(symbolsNASDAQFile);
 			SYMBOLS_NASDAQ_FILE = new File(RESOURCES_DIR_RW, symbolsNASDAQFile);
 		}
@@ -260,13 +280,14 @@ public class MarketSense {
 	/**
 	 * Create a writable copy of a read-only file at {@code resources/<relReadablePath>}.
 	 * 
-	 * @param relReadablePath The relative path within the resources dir referencing the file to copy.
+	 * @param relReadablePath Relative path within readable res dir to file source.
+	 * @param relWritablePath Relative path within writable res dir to file destination.
 	 * 
 	 * @return {@code true} if the copy was created or if the copy already exists.
 	 */
-	private static boolean createWritableCopy(String relReadablePath) {
+	private static boolean createWritableCopy(String relReadablePath, String relWritablePath) {
 		InputStream readable = MarketSense.class.getResourceAsStream(RESOURCES_DIR_R + relReadablePath);
-		File writable = new File(RESOURCES_DIR_RW, relReadablePath);
+		File writable = new File(RESOURCES_DIR_RW, relWritablePath);
 		
 		try {
 			if (!writable.exists()) {
@@ -295,6 +316,17 @@ public class MarketSense {
 			System.out.println("ERROR " + e.getMessage());
 			return false;
 		}
+	}
+	
+	/**
+	 * Convenience method for {@link #createWritableCopy(String, String) createWritableCopy(relPath,relPath)}.
+	 * 
+	 * @param relPath Relative path within resources dir.
+	 * 
+	 * @return {@code true} if the copy was created or if the copy already exists.
+	 */
+	private static boolean createWritableCopy(String relPath) {
+		return createWritableCopy(relPath, relPath);
 	}
 	
 	/**
