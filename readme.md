@@ -2,6 +2,9 @@
 
 Take advantage of the human brain's ability to process signals for pattern recognition and classification by creating a connection from raw data to the human senses, which are the inputs to the brain. Apply this connection to market data and prediction of future asset value.
 
+See the [use and development guide video](https://youtu.be/w_kfTTjpIpQ) for an overview of what this project attempts to
+accomplish, how it's used, and how it works.
+
 ## Usage
 
 tbd
@@ -20,11 +23,14 @@ The resulting program will be a sort of market analysis training, where the user
 
 **Java** with **JavaFX** for the GUI and **Maven** for dependency and build management.
 
-**`git submodule`** for using source code from my own modular subpackages: [twelvedata_client_java](https://github.com/ogallagher/twelvedata_client_java), [temp_fx_logger](https://github.com/ogallagher/temp_fx_logger).
+**`git submodule`** for using source code from my own modular subpackages: [twelvedata_client_java](https://github.com/ogallagher/twelvedata_client_java), [temp_fx_logger](https://github.com/ogallagher/temp_fx_logger),
+[fxgraph](https://github.com/ogallagher/fxgraph).
 
 [twelvedata market api](https://twelvedata.com/blog/first-introduction-getting-an-advantage-in-a-few-minutes) via custom Java client.
 
 Java Persistence API, with [Hibernate](https://hibernate.org) as the persistence provider, and [H2](https://h2database.com) as the database.
+
+[Retrofit](https://square.github.io/retrofit) for converting API endpoints and results to Java objects.
 
 The Java Sound library to synthesize sound with custom [timbre](https://en.wikipedia.org/wiki/Timbre) and [melody](https://en.wikipedia.org/wiki/Melody), along with a controlled [amplitude](https://en.wikipedia.org/wiki/Amplitude) within a comfortable range.
 
