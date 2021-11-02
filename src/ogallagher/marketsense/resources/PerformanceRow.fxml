@@ -8,6 +8,7 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.Label?>
 
 <?import ogallagher.marketsense.widgets.SymbolComboBox?>
 <?import ogallagher.marketsense.widgets.BarWidthComboBox?>
@@ -16,10 +17,14 @@
 <?import ogallagher.marketsense.widgets.MultiDatePicker?>
 <?import java.lang.String?>
 
-<VBox xmlns:fx="http://javafx.com/fxml/1" spacing="4" alignment="CENTER">
+<VBox xmlns:fx="http://javafx.com/fxml/1" spacing="4" alignment="CENTER" fillWidth="true">
 	<stylesheets>
 		<URL value="@PerformanceRow.css" />
 	</stylesheets>
+	
+	<styleClass>
+		<String fx:value="performance-row"/>
+	</styleClass>
 	
 	<children>
 		<HBox alignment="TOP_CENTER">
@@ -61,7 +66,9 @@
 											<styleClass><String fx:value="dates-dropdown"/></styleClass>
 										</MultiDatePicker>
 										<!-- end date -->
-										<TextField text="end date"></TextField>
+										<TextField text="end date" editable="false">
+											<styleClass><String fx:value="dates-last"/></styleClass>
+										</TextField>
 									</children>
 								</HBox>
 							</children>
@@ -88,7 +95,7 @@
 						</VBox>
 						
 						<!-- sample count -->
-						<VBox spacing="8">
+						<VBox spacing="4">
 							<children>
 								<Label text="reps"></Label>
 								<TextField text="30">

@@ -5,6 +5,8 @@ import java.util.HashSet;
 
 import javafx.collections.FXCollections;
 import javafx.scene.control.ComboBox;
+
+import ogallagher.temp_fx_logger.System;
 import ogallagher.twelvedata_client_java.TwelvedataInterface.BarInterval;
 
 /**

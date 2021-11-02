@@ -63,6 +63,11 @@ public class Person {
 		return "Person(username=" + username + ", since=" + sinceDate + ", accuracy=" + accuracy + ")";
 	}
 	
+	public boolean equals(Object other) {
+		return (other instanceof Person) 
+			&& this.getUsername().equals(((Person) other).getUsername());
+	}
+	
 	/**
 	 * Custom widget for displaying information about a person in containers like lists and combo boxes.
 	 * 

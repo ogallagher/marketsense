@@ -13,6 +13,7 @@ import java.util.TreeSet;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.scene.control.ComboBox;
+
 import ogallagher.marketsense.MarketSense;
 import ogallagher.temp_fx_logger.System;
 
@@ -36,6 +37,9 @@ public class SymbolComboBox extends ComboBox<String> {
 		if (allSymbols == null) {
 			// load symbol options
 			loadSymbols(true);
+		}
+		else {
+			Platform.runLater(new ShowSymbols());
 		}
 		
 		self = this;

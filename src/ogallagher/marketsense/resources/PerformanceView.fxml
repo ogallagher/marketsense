@@ -3,6 +3,8 @@
 <?import java.net.URL?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Label?>
 
 <VBox xmlns:fx="http://javafx.com/fxml/1" alignment="CENTER" spacing="4" fillWidth="true">
 	<stylesheets>
@@ -10,11 +12,15 @@
 	</stylesheets>
 	
 	<children>
+		<!-- title -->
+		<Label text="Performance" styleClass="h1" />
+		
 		<!-- performance rows -->
-		<VBox spacing="4" fillWidth="true" alignment="CENTER">
-			<children>
-			</children>
-		</VBox>
+		<ScrollPane fx:id="performanceRowsScroll" fitToWidth="true">
+			<content>
+				<VBox fx:id="performanceRows" spacing="20" fillWidth="true" alignment="CENTER"></VBox>
+			</content>
+		</ScrollPane>
 		
 		<!-- add graph button -->
 		<Button fx:id="addGraphButton" text="add graph"></Button>

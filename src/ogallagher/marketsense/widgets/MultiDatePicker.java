@@ -9,13 +9,14 @@ import java.util.TreeSet;
 
 import java.time.temporal.ChronoUnit;
 
+import javafx.beans.property.ReadOnlyProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableSet;
+import javafx.collections.SetChangeListener;
 import javafx.event.EventHandler;
-import javafx.geometry.Insets;
 import javafx.scene.control.DateCell;
 import javafx.scene.control.DatePicker;
-import javafx.scene.control.TextField;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Background;
@@ -23,9 +24,11 @@ import javafx.scene.layout.BackgroundFill;
 import javafx.scene.paint.Color;
 import javafx.util.StringConverter;
 
+import ogallagher.temp_fx_logger.System;
+
 /**
  * 
- * Derived from 
+ * Extends functionality as suggested in 
  * <a href="https://stackoverflow.com/a/60641108/10200417">this stackoverflow answer</a>.
  * 
  * @author Owen Gallagher
@@ -33,7 +36,7 @@ import javafx.util.StringConverter;
  *
  */
 public class MultiDatePicker extends DatePicker {
-	private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+	public static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 	
 	private static StringConverter<LocalDate> dateConverter;
 	
@@ -50,6 +53,8 @@ public class MultiDatePicker extends DatePicker {
 	 * Underlying ordered set for {@link #values}.
 	 */
 	private TreeSet<LocalDate> valuesSrc;
+	private SimpleObjectProperty<LocalDate> firstValue;
+	private SimpleObjectProperty<LocalDate> lastValue;
 	
 	static {
 		dateConverter = new StringConverter<LocalDate>() {
@@ -75,6 +80,20 @@ public class MultiDatePicker extends DatePicker {
 		// init values
 		valuesSrc = new TreeSet<>();
 		values = FXCollections.observableSet(valuesSrc);
+		
+		// value properties
+		firstValue = new SimpleObjectProperty<>();
+		lastValue = new SimpleObjectProperty<>();
+		
+		values.addListener(new SetChangeListener<LocalDate>() {
+			@Override
+			public void onChanged(Change<? extends LocalDate> change) {
+				boolean empty = valuesSrc.isEmpty();
+				
+				firstValue.set(empty ? null : valuesSrc.first());
+				lastValue.set(empty ? null : valuesSrc.last());
+			}
+		});
 		
 		// text field editor appearance
 		setEditable(false);
@@ -215,6 +234,14 @@ public class MultiDatePicker extends DatePicker {
 	 */
 	public ArrayList<LocalDate> getValues() {
 		return new ArrayList<LocalDate>(valuesSrc);
+	}
+	
+	public ReadOnlyProperty<LocalDate> getLastValueProperty() {
+		return lastValue;
+	}
+	
+	public ReadOnlyProperty<LocalDate> getFirstValueProperty() {
+		return firstValue;
 	}
 
 	/**

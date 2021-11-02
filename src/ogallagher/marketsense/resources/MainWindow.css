@@ -23,6 +23,25 @@ MenuItem {
 	-fx-text-fill: #ffffff;
 }
 
+ScrollPane {
+	-fx-background-color: transparent;
+	-fx-border-style: none;
+}
+
+/* see https://stackoverflow.com/a/22952546/10200417 */
+ScrollPane > .viewport {
+   -fx-background-color: transparent;
+}
+
+Button {
+	-fx-background-color: #435cff; 
+	-fx-text-fill: #ffffff;
+}
+
+Button:hover {
+	-fx-background-color: #140092;
+}
+
 #content {
 	-fx-padding: 8 8 8 8;
 }

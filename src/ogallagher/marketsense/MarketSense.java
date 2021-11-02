@@ -12,6 +12,7 @@ import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 import java.text.DecimalFormat;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -55,6 +56,7 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.Slider;
 import javafx.scene.control.TextField;
@@ -90,8 +92,10 @@ import ogallagher.marketsense.test.Test;
 import ogallagher.marketsense.test.TestDatabase;
 import ogallagher.marketsense.test.TestDatetimeUtils;
 import ogallagher.marketsense.test.TestMarketSynth;
+import ogallagher.marketsense.util.HasCallback;
 import ogallagher.marketsense.util.PointFilter;
 import ogallagher.marketsense.widgets.BarWidthComboBox;
+import ogallagher.marketsense.widgets.MultiDatePicker;
 import ogallagher.marketsense.widgets.SampleSizeComboBox;
 import ogallagher.marketsense.widgets.SymbolComboBox;
 import ogallagher.temp_fx_logger.System;
@@ -482,7 +486,7 @@ public class MarketSense {
 			}
 			
 			// load login form
-			loadPeople(ShowLogin.class, true);
+			loadPeopleCallback(ShowLogin.class, true);
 		}
 		
 		@Override
@@ -517,7 +521,7 @@ public class MarketSense {
 					
 					// update main menubar navigation
 					dashboardMenuItem.setDisable(true);
-					performanceViewMenuItem.setDisable(true);
+					performanceViewMenuItem.setDisable(false);
 					
 					// handle login via text field
 					final TextField loginUsername = (TextField) mainScene.lookup("#loginUsername");
@@ -578,59 +582,63 @@ public class MarketSense {
 			@SuppressWarnings("unchecked")
 			@Override
 			public void run() {
-				Scene mainScene = mainWindow.getScene();
-				
-				try {
-					Pane contentPane = (Pane) mainScene.lookup("#content");
-					ObservableList<Node> content = contentPane.getChildren();
-					content.clear();
+				if (person != null) {
+					Scene mainScene = mainWindow.getScene();
 					
-					Node dashboard = (Node) FXMLLoader.load(MarketSense.class.getResource("resources/Dashboard.fxml")); 
-					content.add(dashboard);
-					
-					// update main menubar navigation
-					dashboardMenuItem.setDisable(true);
-					performanceViewMenuItem.setDisable(false);
-					
-					// trim text fields
-					for (Node tfn : dashboard.lookupAll("TextField")) {
-						TextField tf = (TextField) tfn;
-						tf.setPrefColumnCount(4);
-					}
-					
-					// fill in user stats
-					if (person != null) {
-						Label nameLabel = (Label) mainScene.lookup("#userName");
+					try {
+						Pane contentPane = (Pane) mainScene.lookup("#content");
+						ObservableList<Node> content = contentPane.getChildren();
+						content.clear();
+						
+						Node dashboard = (Node) FXMLLoader.load(MarketSense.class.getResource("resources/Dashboard.fxml")); 
+						content.add(dashboard);
+						
+						// update main menubar navigation
+						dashboardMenuItem.setDisable(true);
+						performanceViewMenuItem.setDisable(false);
+						
+						// trim text fields
+						for (Node tfn : dashboard.lookupAll("TextField")) {
+							TextField tf = (TextField) tfn;
+							tf.setPrefColumnCount(4);
+						}
+						
+						// fill in user stats
+						Label nameLabel = (Label) dashboard.lookup("#userName");
 						nameLabel.setText(person.getUsername());
 						
-						Label accuracyLabel = (Label) mainScene.lookup("#userAccuracy");
+						Label accuracyLabel = (Label) dashboard.lookup("#userAccuracy");
 						accuracyLabel.setText(String.valueOf(person.getAccuracy()));
 						
-						Label sinceLabel = (Label) mainScene.lookup("#userSince");
+						Label sinceLabel = (Label) dashboard.lookup("#userSince");
 						sinceLabel.setText(person.getSince().toString());
+						
+						// enable logout
+						Button logoutButton = (Button) dashboard.lookup("#logout");
+						logoutButton.setOnAction(new EventHandler<ActionEvent>() {
+							@Override
+							public void handle(ActionEvent event) {
+								logout();
+							}
+						});
+						
+						// enable app settings
+						loadAppSettings(dashboard);
+						
+						// fill in training session history
+						trainingSessionsList = (ListView<TrainingSession>) dashboard.lookup("#sessionHistory");
+						loadTrainingSessions(ShowTrainingSessions.class, true);
+						
+						// fill in new training session form
+						loadNewTrainingSessionForm(dashboard);
+					} 
+					catch (IOException e) {
+						System.out.println("error showing dashboard: " + e.getMessage());
 					}
-					
-					// enable logout
-					Button logoutButton = (Button) mainScene.lookup("#logout");
-					logoutButton.setOnAction(new EventHandler<ActionEvent>() {
-						@Override
-						public void handle(ActionEvent event) {
-							logout();
-						}
-					});
-					
-					// enable app settings
-					loadAppSettings(dashboard);
-					
-					// fill in training session history
-					trainingSessionsList = (ListView<TrainingSession>) mainScene.lookup("#sessionHistory");
-					loadTrainingSessions(ShowTrainingSessions.class, true);
-					
-					// fill in new training session form
-					loadNewTrainingSessionForm(dashboard);
-				} 
-				catch (IOException e) {
-					System.out.println("error showing dashboard: " + e.getMessage());
+				}
+				else {
+					// route to login
+					loadPeopleCallback(ShowLogin.class, true);
 				}
 			}
 			
@@ -1197,6 +1205,12 @@ public class MarketSense {
 		 * @since 2021-11-01
 		 */
 		public static class ShowPerformanceView implements Runnable {
+			/**
+			 * Collection of performance rows (performance graph with controls) bound to a container widget in
+			 * the performance view.
+			 */
+			private ObservableList<Node> performanceRows;
+			
 			@Override
 			public void run() {
 				Scene mainScene = mainWindow.getScene();
@@ -1212,6 +1226,43 @@ public class MarketSense {
 					// update main menubar navigation
 					dashboardMenuItem.setDisable(false);
 					performanceViewMenuItem.setDisable(true);
+					
+					// call layout on parent scroll pane to enable content lookup
+					// see https://stackoverflow.com/a/40563331/10200417
+					ScrollPane performanceRowsScroll = (ScrollPane) performanceView.lookup("#performanceRowsScroll");
+					performanceRowsScroll.applyCss();
+					performanceRowsScroll.layout();
+					
+					Pane performanceRowsContainer = (Pane) performanceView.lookup("#performanceRows");
+					performanceRows = performanceRowsContainer.getChildren();
+					
+					// enable add graph button
+					Button addGraphButton = (Button) performanceView.lookup("#addGraphButton");
+					addGraphButton.setOnAction((ActionEvent value) -> {
+						try {
+							// add performance row
+							Node performanceRow = (Node) FXMLLoader.load(MarketSense.class.getResource("resources/PerformanceRow.fxml"));
+							performanceRows.add(performanceRow);
+							
+							// bind end date text field to date picker
+							MultiDatePicker datePicker = (MultiDatePicker) performanceRow.lookup(".dates-dropdown");
+							TextField lastDateField = (TextField) performanceRow.lookup(".dates-last");
+							datePicker.getLastValueProperty().addListener(new ChangeListener<LocalDate>() {
+								@Override
+								public void changed(
+									ObservableValue<? extends LocalDate> observable, LocalDate oldValue, LocalDate newValue) {
+									lastDateField.setText(newValue.format(MultiDatePicker.DATE_FORMAT));
+								}
+							});
+							
+							// add graph to row
+							
+						}
+						catch (IOException e) {
+							System.out.println("error performance row load failed: " + e.getMessage());
+							e.printStackTrace();
+						}
+					});
 				} 
 				catch (IOException e) {
 					System.out.println("error performance view load failed: " + e.getMessage());
@@ -1221,14 +1272,7 @@ public class MarketSense {
 		}
 	}
 	
-	/**
-	 * Loads the entities from the person table to compile a list of known accounts.
-	 * 
-	 * @param <T> Callback type.
-	 * @param OnLoad The callback to which the list of people is passed.
-	 * @param guiThread Whether to use the javafx thread for the callback.
-	 */
-	public static <T extends Runnable> void loadPeople(Class<T> OnLoad, boolean guiThread) {
+	private static <T extends Runnable, U extends HasCallback<T>> void loadPeople(Class<T> OnLoad, U hasOnLoad, boolean guiThread) {
 		System.out.println("loading people from local db");
 		
 		@SuppressWarnings("unchecked")
@@ -1238,7 +1282,16 @@ public class MarketSense {
 		System.out.println("loaded " + people.size() + " people from db");
 		
 		try {
-			Runnable runnable = OnLoad.getDeclaredConstructor(List.class).newInstance(people);
+			Runnable runnable;
+			if (OnLoad != null) {
+				runnable = OnLoad.getDeclaredConstructor(List.class).newInstance(people);
+			}
+			else if (hasOnLoad != null) {
+				runnable = hasOnLoad.getCallback(people);
+			}
+			else {
+				throw new NoSuchMethodException("no callback was defined");
+			}
 			
 			if (guiThread) {
 				Platform.runLater(runnable);
@@ -1249,7 +1302,33 @@ public class MarketSense {
 		}
 		catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e) {
 			System.out.println("error loading people: " + e.getMessage());
+			e.printStackTrace();
 		}
+	}
+	
+	/**
+	 * Loads the entities from the person table to compile a list of known accounts.
+	 * 
+	 * @param <T> Callback type.
+	 * 
+	 * @param OnLoad The callback to which the list of people is passed.
+	 * @param guiThread Whether to use the javafx thread for the callback.
+	 */
+	public static <T extends Runnable> void loadPeopleCallback(Class<T> OnLoad, boolean guiThread) {
+		loadPeople(OnLoad, null, guiThread);
+	}
+	
+	/**
+	 * Loads the entities from the person table to compile a list of known accounts.
+	 * 
+	 * @param <T> Callback owner type.
+	 * @param <U> Callback type.
+	 * 
+	 * @param hasOnLoad <code>HasCallback</code> instance.
+	 * @param guiThread Whether to use the javafx thread for the callback.
+	 */
+	public static <T extends HasCallback<U>, U extends Runnable> void loadPeopleHasCallback(T hasOnLoad, boolean guiThread) {
+		loadPeople(null, hasOnLoad, guiThread);
 	}
 	
 	/**
@@ -1322,7 +1401,7 @@ public class MarketSense {
 		}
 		
 		// show login
-		loadPeople(MarketSenseGUI.ShowLogin.class, true);
+		loadPeopleCallback(MarketSenseGUI.ShowLogin.class, true);
 	}
 	
 	/**

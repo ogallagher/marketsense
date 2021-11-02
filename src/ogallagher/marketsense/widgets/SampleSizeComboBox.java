@@ -6,7 +6,9 @@ import java.util.TreeSet;
 
 import javafx.collections.FXCollections;
 import javafx.scene.control.ComboBox;
+
 import ogallagher.marketsense.MarketSense;
+import ogallagher.temp_fx_logger.System;
 
 /**
  * Combo box with allowed market data sample sizes (number of bars per sample), along with the sample size
