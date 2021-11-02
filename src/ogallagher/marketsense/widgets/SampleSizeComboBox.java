@@ -30,7 +30,7 @@ public class SampleSizeComboBox extends ComboBox<Integer> {
 		
 		HashSet<Integer> sampleSizes = new HashSet<Integer>();
 		for (Integer size : new Integer[] {
-			sampleSize, 7, 10, 15, 20, 30
+			-1, sampleSize, 7, 10, 15, 20, 30
 		}) {
 			sampleSizes.add(size);
 		}
@@ -42,6 +42,6 @@ public class SampleSizeComboBox extends ComboBox<Integer> {
 				new TreeSet<Integer>(sampleSizes)
 			)));
 		
-		setValue(sampleSize);
+		setValue(-1);
 	}
 }

@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import java.net.URL?>
+<?import java.lang.String?>
 
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.control.TextField?>
@@ -15,7 +17,6 @@
 <?import ogallagher.marketsense.widgets.SampleSizeComboBox?>
 <?import ogallagher.marketsense.widgets.AccountComboBox?>
 <?import ogallagher.marketsense.widgets.MultiDatePicker?>
-<?import java.lang.String?>
 
 <VBox xmlns:fx="http://javafx.com/fxml/1" spacing="4" alignment="CENTER" fillWidth="true">
 	<stylesheets>
@@ -66,7 +67,7 @@
 											<styleClass><String fx:value="dates-dropdown"/></styleClass>
 										</MultiDatePicker>
 										<!-- end date -->
-										<TextField text="end date" editable="false">
+										<TextField editable="false">
 											<styleClass><String fx:value="dates-last"/></styleClass>
 										</TextField>
 									</children>
@@ -79,7 +80,7 @@
 							<children>
 								<Label text="bar width"></Label>
 								<BarWidthComboBox>
-									<styleClass><String fx:value="bar-width-dropDown"/></styleClass>
+									<styleClass><String fx:value="bar-width-dropdown"/></styleClass>
 								</BarWidthComboBox>
 							</children>
 						</VBox>
@@ -97,8 +98,8 @@
 						<!-- sample count -->
 						<VBox spacing="4">
 							<children>
-								<Label text="reps"></Label>
-								<TextField text="30">
+								<Label text="reps per session"></Label>
+								<TextField text="">
 									<styleClass><String fx:value="sample-count-dropdown"/></styleClass>
 								</TextField>
 							</children>
@@ -117,11 +118,18 @@
 						<Button text="mean line">
 							<styleClass><String fx:value="meanline-button"/></styleClass>
 						</Button>
+						
+						<Button text="refresh">
+							<styleClass><String fx:value="refresh-button"/></styleClass>
+						</Button>
 					</children>
 				</VBox>
 			</children>
 		</HBox>
 		
 		<!-- graph added dynamically -->
+		<BorderPane>
+			<styleClass><String fx:value="graph-container"/></styleClass>
+		</BorderPane>
 	</children>
 </VBox>

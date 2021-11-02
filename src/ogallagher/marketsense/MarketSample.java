@@ -16,7 +16,7 @@ import ogallagher.marketsense.persistent.TradeBarId;
 import ogallagher.twelvedata_client_java.TwelvedataInterface.BarInterval;
 
 /**
- * Encapsulates market data its marketsense data mapping for use with training and testing sessions.
+ * Encapsulates market data with its marketsense data mapping for use with training and testing sessions.
  * 
  * @author Owen Gallagher
  * @since 2021-08-12
@@ -31,6 +31,11 @@ public class MarketSample {
 	private LocalDateTime start;
 	private LocalDateTime end;
 	private int barCount;
+	/**
+	 * Width of trade bar in sample.
+	 * 
+	 * @see BarInterval <code>BarInterval</code> string constants.
+	 */
 	private String barWidth;
 	private ArrayList<TradeBar> bars;
 	private TradeBar future;

@@ -80,6 +80,7 @@ import ogallagher.twelvedata_client_java.TwelvedataClient;
 import ogallagher.twelvedata_client_java.TwelvedataInterface.BarInterval;
 import ogallagher.twelvedata_client_java.TwelvedataInterface.Failure;
 import ogallagher.twelvedata_client_java.TwelvedataInterface.SecuritySet;
+import ogallagher.marketsense.PerformanceSample.PerformancePoint;
 import ogallagher.marketsense.persistent.Person;
 import ogallagher.marketsense.persistent.Security;
 import ogallagher.marketsense.persistent.SecurityId;
@@ -94,6 +95,7 @@ import ogallagher.marketsense.test.TestDatetimeUtils;
 import ogallagher.marketsense.test.TestMarketSynth;
 import ogallagher.marketsense.util.HasCallback;
 import ogallagher.marketsense.util.PointFilter;
+import ogallagher.marketsense.widgets.AccountComboBox;
 import ogallagher.marketsense.widgets.BarWidthComboBox;
 import ogallagher.marketsense.widgets.MultiDatePicker;
 import ogallagher.marketsense.widgets.SampleSizeComboBox;
@@ -752,7 +754,7 @@ public class MarketSense {
 				try {
 					Node sessionRoot = (Node) FXMLLoader.load(MarketSense.class.getResource("resources/TrainingSession.fxml"));
 					content.add(sessionRoot);
-					System.out.println("DEBUG added training session root to content");
+					System.out.println("debug added training session root to content");
 					
 					// enable quit/abort
 					Button abort = (Button) sessionRoot.lookup("#quit");
@@ -762,7 +764,7 @@ public class MarketSense {
 							abortTrainingSession();
 						}
 					});
-					System.out.println("DEBUG enabled abort button");
+					System.out.println("debug enabled abort button");
 					
 					// load sample id (should be zero)
 					Label sampleId = (Label) sessionRoot.lookup("#sampleId");
@@ -785,7 +787,7 @@ public class MarketSense {
 							}
 						}
 					});
-					System.out.println("DEBUG bound sample id");
+					System.out.println("debug bound sample id");
 					
 					// load average score (should be 0.5) and score interval
 					Label score = (Label) sessionRoot.lookup("#score");
@@ -798,7 +800,7 @@ public class MarketSense {
 							score.setText(String.valueOf(scorePct));
 						}
 					});
-					System.out.println("DEBUG loaded average score");
+					System.out.println("debug loaded average score");
 					
 					// load score confidence interval
 					Label scoreLow = (Label) sessionRoot.lookup("#scoreIntervalLow");
@@ -1205,6 +1207,9 @@ public class MarketSense {
 		 * @since 2021-11-01
 		 */
 		public static class ShowPerformanceView implements Runnable {
+			private static final int PERFORMANCE_GRAPH_WIDTH = 600;
+			private static final int PERFORMANCE_GRAPH_HEIGHT = 150;
+			
 			/**
 			 * Collection of performance rows (performance graph with controls) bound to a container widget in
 			 * the performance view.
@@ -1238,7 +1243,7 @@ public class MarketSense {
 					
 					// enable add graph button
 					Button addGraphButton = (Button) performanceView.lookup("#addGraphButton");
-					addGraphButton.setOnAction((ActionEvent value) -> {
+					addGraphButton.setOnAction((ActionEvent addGraphEvent) -> {
 						try {
 							// add performance row
 							Node performanceRow = (Node) FXMLLoader.load(MarketSense.class.getResource("resources/PerformanceRow.fxml"));
@@ -1255,8 +1260,58 @@ public class MarketSense {
 								}
 							});
 							
-							// add graph to row
+							// enable graph refresh button
+							BorderPane graphContainer = (BorderPane) performanceRow.lookup(".graph-container");
 							
+							((Button) performanceRow.lookup(".refresh-button")).setOnAction((ActionEvent refreshEvent) -> {
+								String symbol = ((SymbolComboBox) performanceRow.lookup(".symbol-dropdown")).getValue();
+								String sampleCount = ((TextField) performanceRow.lookup(".sample-count-dropdown")).getText();
+								
+								// create new performance sample
+								PerformanceSample sample = new PerformanceSample(
+									// person
+									((AccountComboBox) performanceRow.lookup(".account-dropdown")).getValue(),
+									// security
+									symbol != null && symbol.length() != 0 
+										? Security.loadSecurity(symbol,dbManager,tdclient)
+										: null,
+									// date range
+									datePicker.getFirstValueProperty().getValue(), 
+									datePicker.getLastValueProperty().getValue(),
+									// bar width
+									((BarWidthComboBox) performanceRow.lookup(".bar-width-dropdown")).getValue(),
+									// sample size
+									((SampleSizeComboBox) performanceRow.lookup(".sample-size-dropdown")).getValue(),
+									// sample count
+									sampleCount != null && sampleCount.length() != 0 
+										? Integer.parseInt(sampleCount) 
+										: -1
+								);
+								
+								// TODO move sample data fetch off gui thread
+								// fetch sample points from database
+								sample.prepare(dbManager);
+								
+								// replace graph with data from new sample
+								CartesianGraph graph = loadPerformanceGraph(
+									sample, 
+									PERFORMANCE_GRAPH_WIDTH, 
+									PERFORMANCE_GRAPH_HEIGHT,
+									false
+								);
+								PannableCanvas canvas = graph.getCanvas();
+								
+								// place in graph container
+								graphContainer.getChildren().clear();
+								graphContainer.setCenter(canvas);
+								graphContainer.setClip(new Rectangle(
+										canvas.getPrefWidth(), 
+										canvas.getPrefHeight()
+								));
+								
+								// TODO fix CartesianGraph.layout
+								// graph.layout();
+							});
 						}
 						catch (IOException e) {
 							System.out.println("error performance row load failed: " + e.getMessage());
@@ -1268,6 +1323,73 @@ public class MarketSense {
 					System.out.println("error performance view load failed: " + e.getMessage());
 					e.printStackTrace();
 				}
+			}
+			
+			private CartesianGraph loadPerformanceGraph(PerformanceSample sample, int graphWidth, int graphHeight, boolean showIntervals) {
+				CartesianGraph graph = new CartesianGraph(CartesianGraph.PlotMode.CONNECTED_POINTS, graphWidth, graphHeight);
+				graph.getUseViewportGestures().set(false);
+				graph.getUseNodeGestures().set(false);
+				
+				List<Point2D> points = new LinkedList<>();
+				int i=0;
+				double minY = Double.MAX_VALUE, maxY = Double.MIN_VALUE, minX = Double.MAX_VALUE, maxX = Double.MIN_VALUE;
+				double x, y;
+				Point2D p;
+				for (PerformancePoint point : sample.getPoints()) {
+					p = new Point2D(i++, point.getScore());
+					x = p.getX(); y = p.getY();
+					
+					if (x < minX) {
+						minX = x;
+					}
+					if (x > maxX) {
+						maxX = x;
+					}
+					if (y < minY) {
+						minY = y;
+					}
+					if (y > maxY) {
+						maxY = y;
+					}
+					
+					points.add(p);
+				}
+				
+				// define data filter
+				PointFilter dataFilter = new PointFilter(minX,maxX,minY,maxY,graphWidth,graphHeight) {
+					@Override
+					public List<Point2D> call() {
+						List<Point2D> output = new ArrayList<>(this.input.size());
+						
+						for (Point2D point : input) {
+							output.add(new Point2D(
+								(point.getX()-this.minX)/(this.maxX-minX) * (this.graphWidth-50),
+								// 1 - ... flips y axis
+								(1 - (point.getY()-this.minY)/(this.maxY-this.minY)) * (this.graphHeight-50)
+							));
+						}
+						
+						return output;
+					}
+				};
+				
+				try {
+					// filter data
+					dataFilter.setInput(points);
+					points = dataFilter.call();
+					
+					// add filtered data to graph
+					graph.addDataset(
+						points, 
+						null, 
+						5, CartesianPoint.BulletType.CIRCLE, javafx.scene.paint.Color.CRIMSON
+					);
+				} 
+				catch (Exception e) {
+					System.out.println("ERROR error using data filter: " + e.getMessage());
+				}
+				
+				return graph;
 			}
 		}
 	}
@@ -1416,7 +1538,7 @@ public class MarketSense {
 	 * @return
 	 */
 	public static boolean newTrainingSession(String symbol, String barWidth, int sampleSize, int sampleCount, int maxLookbackMonths) {
-		Security security = null;
+		Security security = Security.loadSecurity(symbol, dbManager, tdclient);
 		
 		// commit training session config to properties file
 		properties.setProperty(PROP_TRAIN_SYMBOL, symbol);
@@ -1425,54 +1547,6 @@ public class MarketSense {
 		properties.setProperty(PROP_TRAIN_SAMPLE_COUNT, Integer.toString(sampleCount));
 		properties.setProperty(PROP_TRAIN_LOOKBACK_MAX_MONTHS, Integer.toString(maxLookbackMonths));
 		saveProperties();
-		
-		// try to fetch security from db
-		try {
-			Security dbSecurity = (Security) dbManager.createQuery(
-				"select s from " + Security.DB_TABLE + " s " + 
-				"where s." + Security.DB_COL_ID + "." + SecurityId.DB_COL_SYMBOL + " = :symbol"
-			)
-			.setParameter("symbol", symbol)
-			.setMaxResults(1)
-			.getSingleResult();
-			
-			security = dbSecurity;
-		}
-		catch (NoResultException e) {
-			// try to use twelvedata api lookup to determine security specs from symbol if not in db
-			SecuritySet securitySet = tdclient.symbolLookup(symbol, 10);
-			SecuritySet.Security tdSecurity = null;
-			
-			for (SecuritySet.Security candidate : securitySet.data) {
-				if (candidate.symbol.equals(symbol) && (candidate.exchange.equals("NYSE") || candidate.exchange.equals("NASDAQ"))) {
-					tdSecurity = candidate;
-					break;
-				}
-				else {
-					System.out.println("skip candidate " + candidate);
-				}
-			}
-			
-			if (tdSecurity != null) {
-				SecurityType securityType = SecurityType.STOCK;
-				switch (tdSecurity.instrument_type) {
-					case ogallagher.twelvedata_client_java.TwelvedataInterface.SecurityType.ETF:
-						securityType = SecurityType.ETF;
-						break;
-				
-					case ogallagher.twelvedata_client_java.TwelvedataInterface.SecurityType.COMMON_STOCK:
-						securityType = SecurityType.STOCK;
-						break;
-				}
-				
-				security = new Security(tdSecurity.symbol, tdSecurity.exchange, securityType);
-				
-				// add security to db
-				dbManager.getTransaction().begin();
-				dbManager.persist(security);
-				dbManager.getTransaction().commit();
-			}
-		}
 		
 		if (security != null) {
 			TrainingSession session = new TrainingSession(
