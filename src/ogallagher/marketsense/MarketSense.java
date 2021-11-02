@@ -370,10 +370,21 @@ public class MarketSense {
 		}
 	}
 	
+	/**
+	 * Encapsulates the application's graphical interface, including a number of runnables designed to be run
+	 * on the javafx app thread.
+	 * 
+	 * @author Owen Gallagher
+	 * @since 9 June 2021
+	 */
 	public static class MarketSenseGUI extends Application {
-		private static Stage mainWindow = null;
+		private static Stage mainWindow;
 		private static int MAIN_WINDOW_WIDTH_INIT = 800;
 		private static int MAIN_WINDOW_HEIGHT_INIT = 510;
+		
+		private static MenuItem consoleMenuItem;
+		private static MenuItem dashboardMenuItem;
+		private static MenuItem performanceViewMenuItem;
 		
 		/**
 		 * Provide static access to the {@code HostServices} instance of the latest {@code MarketSenseGUI} launched.
@@ -415,7 +426,7 @@ public class MarketSense {
 			// menu bar controls
 			Menu viewMenu = new Menu("view");
 			
-			MenuItem consoleMenuItem = new MenuItem("console window");
+			consoleMenuItem = new MenuItem("console window");
 			consoleMenuItem.setOnAction(new EventHandler<ActionEvent>() {
 				@Override
 				public void handle(ActionEvent event) {
@@ -429,7 +440,30 @@ public class MarketSense {
 					}
 				}
 			});
-			viewMenu.getItems().add(consoleMenuItem);
+			
+			// navigate to dashboard
+			dashboardMenuItem = new MenuItem("dashboard");
+			dashboardMenuItem.setOnAction(new EventHandler<ActionEvent>() {
+				@Override
+				public void handle(ActionEvent event) {
+					Platform.runLater(new ShowDashboard());
+				}
+			});
+			
+			// navigate to performance view
+			performanceViewMenuItem = new MenuItem("performance");
+			performanceViewMenuItem.setOnAction(new EventHandler<ActionEvent>() {
+				@Override
+				public void handle(ActionEvent event) {
+					Platform.runLater(new ShowPerformanceView());
+				}
+			});
+			
+			viewMenu.getItems().addAll(
+				consoleMenuItem, 
+				dashboardMenuItem, 
+				performanceViewMenuItem
+			);
 			
 			MenuBar menuBar = (MenuBar) mainScene.lookup("#mainMenuBar");
 			menuBar.getMenus().add(viewMenu);
@@ -457,10 +491,10 @@ public class MarketSense {
 		}
 		
 		/**
-		 * Should be run on javafx thread.
+		 * Open login form in main window. Should be run on javafx thread.
 		 * 
 		 * @author Owen Gallagher
-		 *
+		 * @since 2 June 2021
 		 */
 		public static class ShowLogin implements Runnable {
 			private List<Person> people;
@@ -480,6 +514,10 @@ public class MarketSense {
 					content.add(
 						(Node) FXMLLoader.load(MarketSense.class.getResource("resources/LoginForm.fxml"))
 					);
+					
+					// update main menubar navigation
+					dashboardMenuItem.setDisable(true);
+					performanceViewMenuItem.setDisable(true);
 					
 					// handle login via text field
 					final TextField loginUsername = (TextField) mainScene.lookup("#loginUsername");
@@ -527,6 +565,12 @@ public class MarketSense {
 			}
 		}
 		
+		/**
+		 * Open the dashboard in the main window. Should be run on javafx thread.
+		 * 
+		 * @author Owen Gallagher
+		 * @since June 2021
+		 */
 		public static class ShowDashboard implements Runnable {
 			private static ComboBox<String> symbolDropdown = null;
 			private static ListView<TrainingSession> trainingSessionsList = null;
@@ -543,6 +587,10 @@ public class MarketSense {
 					
 					Node dashboard = (Node) FXMLLoader.load(MarketSense.class.getResource("resources/Dashboard.fxml")); 
 					content.add(dashboard);
+					
+					// update main menubar navigation
+					dashboardMenuItem.setDisable(true);
+					performanceViewMenuItem.setDisable(false);
 					
 					// trim text fields
 					for (Node tfn : dashboard.lookupAll("TextField")) {
@@ -660,6 +708,12 @@ public class MarketSense {
 			}
 		}
 		
+		/**
+		 * Open a new training session in main window. Should be run on javafx thread.
+		 * 
+		 * @author Owen Gallagher
+		 * @since August 2021
+		 */
 		public static class ShowTrainingSession implements Runnable {
 			private static final int SAMPLE_GRAPH_WIDTH = 600;
 			private static final int SAMPLE_GRAPH_HEIGHT = 300;
@@ -682,6 +736,10 @@ public class MarketSense {
 				Pane contentPane = (Pane) mainScene.lookup("#content");
 				ObservableList<Node> content = contentPane.getChildren();
 				content.clear();
+				
+				// update main menubar navigation
+				dashboardMenuItem.setDisable(true);
+				performanceViewMenuItem.setDisable(true);
 				
 				try {
 					Node sessionRoot = (Node) FXMLLoader.load(MarketSense.class.getResource("resources/TrainingSession.fxml"));
@@ -1040,6 +1098,12 @@ public class MarketSense {
 			}
 		}
 		
+		/**
+		 * Open the api key input form in its own window. Should be run on javafx thread.
+		 * 
+		 * @author Owen Gallagher
+		 * @since August 2021
+		 */
 		public static class ShowApiKeyForm implements Runnable {
 			private static final String WINDOW_TITLE = "API Key Form";
 			private static final int WINDOW_WIDTH = 500;
@@ -1126,14 +1190,13 @@ public class MarketSense {
 			}
 		}
 		
+		/**
+		 * Open performance view in main window. Should be run on javafx thread.
+		 * 
+		 * @author Owen Gallagher
+		 * @since 2021-11-01
+		 */
 		public static class ShowPerformanceView implements Runnable {
-			/**
-			 * Default constructor.
-			 */
-			public ShowPerformanceView() {
-				
-			}
-
 			@Override
 			public void run() {
 				Scene mainScene = mainWindow.getScene();
@@ -1145,6 +1208,10 @@ public class MarketSense {
 				try {
 					Node performanceView = (Node) FXMLLoader.load(MarketSense.class.getResource("resources/PerformanceView.fxml"));
 					content.add(performanceView);
+					
+					// update main menubar navigation
+					dashboardMenuItem.setDisable(false);
+					performanceViewMenuItem.setDisable(true);
 				} 
 				catch (IOException e) {
 					System.out.println("error performance view load failed: " + e.getMessage());
@@ -1157,7 +1224,7 @@ public class MarketSense {
 	/**
 	 * Loads the entities from the person table to compile a list of known accounts.
 	 * 
-	 * @param <T>
+	 * @param <T> Callback type.
 	 * @param OnLoad The callback to which the list of people is passed.
 	 * @param guiThread Whether to use the javafx thread for the callback.
 	 */
@@ -1260,6 +1327,14 @@ public class MarketSense {
 	
 	/**
 	 * Open a new training session using the parameters selected in the new training session form.
+	 * 
+	 * @param symbol
+	 * @param barWidth
+	 * @param sampleSize
+	 * @param sampleCount
+	 * @param maxLookbackMonths
+	 * 
+	 * @return
 	 */
 	public static boolean newTrainingSession(String symbol, String barWidth, int sampleSize, int sampleCount, int maxLookbackMonths) {
 		Security security = null;
