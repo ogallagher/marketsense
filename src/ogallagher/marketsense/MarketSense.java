@@ -91,6 +91,9 @@ import ogallagher.marketsense.test.TestDatabase;
 import ogallagher.marketsense.test.TestDatetimeUtils;
 import ogallagher.marketsense.test.TestMarketSynth;
 import ogallagher.marketsense.util.PointFilter;
+import ogallagher.marketsense.widgets.BarWidthComboBox;
+import ogallagher.marketsense.widgets.SampleSizeComboBox;
+import ogallagher.marketsense.widgets.SymbolComboBox;
 import ogallagher.temp_fx_logger.System;
 
 /**
@@ -107,7 +110,7 @@ public class MarketSense {
 	/**
 	 * Program version string.
 	 */
-	public static final String VERSION = "0.1.3";
+	public static final String VERSION = "0.1.4";
 	
 	/**
 	 * Path to program parent directory. In development, this is the parent folder of the one containing 
@@ -162,42 +165,42 @@ public class MarketSense {
 	/**
 	 * Program properties key for a twelvedata api key.
 	 */
-	private static final String PROP_TWELVEDATA_API_KEY = "twelvedata_api_key";
+	public static final String PROP_TWELVEDATA_API_KEY = "twelvedata_api_key";
 	/**
 	 * Program properties key for the name of the persistence unit, which should usually be left alone.
 	 */
-	private static final String PROP_PERSIST_UNIT = "persistence_unit";
+	public static final String PROP_PERSIST_UNIT = "persistence_unit";
 	
 	/**
 	 * Program properties key for whether to run unit tests prior to running the program.
 	 */
-	private static final String PROP_RUN_TESTS = "run_tests";
+	public static final String PROP_RUN_TESTS = "run_tests";
 	
 	/**
 	 * Program properties key for whether to save sounds generated with the {@link #marketSynth}.
 	 */
-	private static final String PROP_SAVE_SOUNDS = "save_sounds";
+	public static final String PROP_SAVE_SOUNDS = "save_sounds";
 	
 	/**
 	 * Program properties key for the default training session asset symbol.
 	 */
-	private static final String PROP_TRAIN_SYMBOL = "train_symbol";
+	public static final String PROP_TRAIN_SYMBOL = "train_symbol";
 	/**
 	 * Program properties key for the default training session tradebar width.
 	 */
-	private static final String PROP_TRAIN_BAR_WIDTH = "train_bar_width";
+	public static final String PROP_TRAIN_BAR_WIDTH = "train_bar_width";
 	/**
 	 * Program properties key for the default training session sample size.
 	 */
-	private static final String PROP_TRAIN_SAMPLE_SIZE = "train_sample_size";
+	public static final String PROP_TRAIN_SAMPLE_SIZE = "train_sample_size";
 	/**
 	 * Program properties key for the default training session sample count.
 	 */
-	private static final String PROP_TRAIN_SAMPLE_COUNT = "train_sample_count";
+	public static final String PROP_TRAIN_SAMPLE_COUNT = "train_sample_count";
 	/**
 	 * Program properties key for the default training session lookback, in months.
 	 */
-	private static final String PROP_TRAIN_LOOKBACK_MAX_MONTHS = "train_lookback_max_months";
+	public static final String PROP_TRAIN_LOOKBACK_MAX_MONTHS = "train_lookback_max_months";
 	
 	/**
 	 * The program twelvedata api client.
@@ -518,7 +521,8 @@ public class MarketSense {
 					});
 				}
 				catch (IOException e) {
-					System.out.println("ERROR showing login: " + e.getMessage());
+					System.out.println("error showing login: " + e.getMessage());
+					e.printStackTrace();
 				}
 			}
 		}
@@ -598,53 +602,18 @@ public class MarketSense {
 				saveSounds.setSelected(Boolean.valueOf(properties.getProperty(PROP_SAVE_SOUNDS, "false")));
 			}
 			
-			@SuppressWarnings("unchecked")
 			private void loadNewTrainingSessionForm(Node dashboard) {
 				// symbol
-				symbolDropdown = (ComboBox<String>) dashboard.lookup("#trainSymbol");
+				symbolDropdown = (SymbolComboBox) dashboard.lookup("#trainSymbol");
 				symbolDropdown.setValue(properties.getProperty(PROP_TRAIN_SYMBOL, "AAPL"));
 				
-				loadSymbols(ShowSymbols.class, true);
-				
 				// bar widths
-				ComboBox<String> barWidthDropdown = (ComboBox<String>) dashboard.lookup("#trainBarWidth");
+				BarWidthComboBox barWidthDropdown = (BarWidthComboBox) dashboard.lookup("#trainBarWidth");
 				barWidthDropdown.setValue(properties.getProperty(PROP_TRAIN_BAR_WIDTH, BarInterval.DY_1));
 				
-				// current allowed bar widths between 1 hour and 1 day
-				HashSet<String> barWidths = new HashSet<String>();
-				for (String width : new String[] {
-					BarInterval.HR_1,
-					BarInterval.HR_2,
-					BarInterval.HR_4,
-					BarInterval.HR_8,
-					BarInterval.DY_1
-				}) {
-					barWidths.add(width);
-				}
-				
-				barWidthDropdown.setItems(FXCollections.observableList(new ArrayList<String>(barWidths)));
-				
 				// sample sizes, number of trade bars per sample
-				ComboBox<Integer> sampleSizeDropdown = (ComboBox<Integer>) dashboard.lookup("#trainSampleSize");
-				
-				// current supported sample sizes
-				Integer sampleSize = Integer.valueOf(properties.getProperty(PROP_TRAIN_SAMPLE_SIZE, "7"));
-				
-				HashSet<Integer> sampleSizes = new HashSet<Integer>();
-				for (Integer size : new Integer[] {
-					sampleSize, 7, 10, 15, 20, 30
-				}) {
-					sampleSizes.add(size);
-				}
-				
-				sampleSizeDropdown.setItems(FXCollections.observableList(
-					// convert to list
-					new ArrayList<Integer>(
-						// sort with TreeSet constructor
-						new TreeSet<Integer>(sampleSizes)
-					)));
-				
-				sampleSizeDropdown.setValue(sampleSize);
+				// initial value from property and valid values handled in constructor.
+				SampleSizeComboBox sampleSizeDropdown = (SampleSizeComboBox) dashboard.lookup("#trainSampleSize");
 				
 				// max lookback
 				TextField maxLookback = (TextField) dashboard.lookup("#trainMaxLookback");
@@ -668,32 +637,6 @@ public class MarketSense {
 						);
 					}
 				});
-			}
-			
-			/**
-			 * Symbols load from files is done on separate thread, and load into dropdown options
-			 * is done in this callback, on the gui thread.
-			 * 
-			 * @author Owen Gallagher
-			 *
-			 */
-			public static class ShowSymbols implements Runnable {
-				private HashSet<String> symbols;
-				
-				public ShowSymbols(HashSet<String> symbols) {
-					this.symbols = symbols;
-				}
-				
-				@Override
-				public void run() {
-					symbolDropdown.setItems(FXCollections.observableList(
-						// convert to list
-						new ArrayList<String>(
-							// sort with TreeSet constructor
-							new TreeSet<String>(symbols)
-						)
-					));
-				}
 			}
 			
 			public static class ShowTrainingSessions implements Runnable {
@@ -1182,6 +1125,33 @@ public class MarketSense {
 				}
 			}
 		}
+		
+		public static class ShowPerformanceView implements Runnable {
+			/**
+			 * Default constructor.
+			 */
+			public ShowPerformanceView() {
+				
+			}
+
+			@Override
+			public void run() {
+				Scene mainScene = mainWindow.getScene();
+				
+				Pane contentPane = (Pane) mainScene.lookup("#content");
+				ObservableList<Node> content = contentPane.getChildren();
+				content.clear();
+				
+				try {
+					Node performanceView = (Node) FXMLLoader.load(MarketSense.class.getResource("resources/PerformanceView.fxml"));
+					content.add(performanceView);
+				} 
+				catch (IOException e) {
+					System.out.println("error performance view load failed: " + e.getMessage());
+					e.printStackTrace();
+				}
+			}
+		}
 	}
 	
 	/**
@@ -1212,57 +1182,6 @@ public class MarketSense {
 		}
 		catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e) {
 			System.out.println("error loading people: " + e.getMessage());
-		}
-	}
-	
-	/**
-	 * Loads all supported asset symbols from resource files: {@link SYMBOLS_FILE_NYSE}, {@link SYMBOLS_FILE_NASDAQ}.
-	 * 
-	 * @param <T>
-	 * @param OnLoad The callback to which the {@code HashSet<String>} of symbols is passed.
-	 * @param guiThread Whether the callback needs to be executed on the gui thread.
-	 */
-	public static <T extends Runnable> void loadSymbols(Class<T> OnLoad, boolean guiThread) {
-		System.out.println("loading symbols from resource files");
-		
-		HashSet<String> allSymbols = new HashSet<>();
-		
-		// read symbols from resources
-		for (File file : new File[] {
-			SYMBOLS_NYSE_FILE,
-			SYMBOLS_NASDAQ_FILE
-		}) {
-			try {
-				BufferedReader reader = new BufferedReader(new FileReader(file));
-				Iterator<String> line = reader.lines().iterator();
-				
-				// skip header
-				line.next();
-				
-				while (line.hasNext()) {
-					String[] symbolName = line.next().split("\\t");
-					allSymbols.add(symbolName[0]);
-				}
-				
-				reader.close();
-			}
-			catch (IOException e) {
-				System.out.println("failed to read symbols list from " + file.getPath());
-			}
-		}
-		
-		try {
-			Runnable runnable = OnLoad.getDeclaredConstructor(HashSet.class).newInstance(allSymbols);
-			
-			if (guiThread) {
-				Platform.runLater(runnable);
-			}
-			else {
-				new Thread(runnable).start();
-			}
-		} 
-		catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e) {
-			System.out.println("error loading symbols: " + e.getMessage());
 		}
 	}
 	
@@ -1527,5 +1446,46 @@ public class MarketSense {
 	
 	public static File getParentDir() {
 		return PARENT_DIR;
+	}
+	
+	/**
+	 * @return {@link #SYMBOLS_NASDAQ_FILE}.
+	 */
+	public static File getSymbolsFileNasdaq() {
+		return SYMBOLS_NASDAQ_FILE;
+	}
+	
+	/**
+	 * @return {@link #SYMBOLS_NYSE_FILE}.
+	 */
+	public static File getSymbolsFileNyse() {
+		return SYMBOLS_NYSE_FILE;
+	}
+	
+	/**
+	 * @param key The property key.
+	 * 
+	 * @return Property from {@link #properties}.
+	 */
+	public static String getProperty(String key) {
+		return properties.getProperty(key);
+	}
+	
+	/**
+	 * 
+	 * @param key
+	 * @param defaultValue
+	 * 
+	 * @return Property from {@link #properties}.
+	 */
+	public static String getProperty(String key, String defaultValue) {
+		return properties.getProperty(key, defaultValue);
+	}
+	
+	/**
+	 * @return Current active account, {@link #person}.
+	 */
+	public static Person getAccount() {
+		return person;
 	}
 }

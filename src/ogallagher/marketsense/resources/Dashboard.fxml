@@ -15,6 +15,10 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.layout.BorderPane?>
 
+<?import ogallagher.marketsense.widgets.SymbolComboBox?>
+<?import ogallagher.marketsense.widgets.BarWidthComboBox?>
+<?import ogallagher.marketsense.widgets.SampleSizeComboBox?>
+
 <VBox xmlns:fx="http://javafx.com/fxml/1" alignment="TOP_CENTER" spacing="4" fillWidth="true">
 	<stylesheets>
 		<URL value="@Dashboard.css" />
@@ -58,25 +62,19 @@
 										<HBox spacing="8">
 											<children>
 												<Label text="symbol"></Label>
-												<ComboBox fx:id="trainSymbol">
-													<value><String fx:value="AAPL"/></value>
-												</ComboBox>
+												<SymbolComboBox fx:id="trainSymbol"></SymbolComboBox>
 											</children>
 										</HBox>
 										<HBox spacing="8">
 											<children>
 												<Label text="bar width"></Label>
-												<ComboBox fx:id="trainBarWidth">
-													<value><String fx:value="1day"/></value>
-												</ComboBox>
+												<BarWidthComboBox fx:id="trainBarWidth"></BarWidthComboBox>
 											</children>
 										</HBox>
 										<HBox spacing="8">
 											<children>
 												<Label text="sample size"></Label>
-												<ComboBox fx:id="trainSampleSize">
-													<value><Integer fx:value="7"/></value>
-												</ComboBox>
+												<SampleSizeComboBox fx:id="trainSampleSize"></SampleSizeComboBox>
 												<Label text="bars"></Label>
 											</children>
 										</HBox>

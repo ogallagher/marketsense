@@ -63,6 +63,12 @@ public class Person {
 		return "Person(username=" + username + ", since=" + sinceDate + ", accuracy=" + accuracy + ")";
 	}
 	
+	/**
+	 * Custom widget for displaying information about a person in containers like lists and combo boxes.
+	 * 
+	 * @author Owen Gallagher
+	 *
+	 */
 	public static class PersonListCell extends ListCell<Person> {
 		@Override
 		public void updateItem(Person item, boolean empty) {

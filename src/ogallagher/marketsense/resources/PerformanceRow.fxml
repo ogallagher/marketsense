@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.net.URL?>
+
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Tooltip?>
+<?import javafx.scene.control.TextField?>
+
+<?import ogallagher.marketsense.widgets.SymbolComboBox?>
+<?import ogallagher.marketsense.widgets.BarWidthComboBox?>
+<?import ogallagher.marketsense.widgets.SampleSizeComboBox?>
+<?import ogallagher.marketsense.widgets.AccountComboBox?>
+<?import ogallagher.marketsense.widgets.MultiDatePicker?>
+<?import java.lang.String?>
+
+<VBox xmlns:fx="http://javafx.com/fxml/1" spacing="4" alignment="CENTER">
+	<stylesheets>
+		<URL value="@PerformanceRow.css" />
+	</stylesheets>
+	
+	<children>
+		<HBox alignment="TOP_CENTER">
+			<children>
+				<!-- filters -->
+				<FlowPane vgap="8" hgap="4" orientation="HORIZONTAL">
+					<children>
+						<!-- account -->
+						<VBox spacing="4">
+							<children>
+								<Label text="account"></Label>
+								<AccountComboBox>
+									<styleClass><String fx:value="account-dropdown"/></styleClass>
+								</AccountComboBox>
+							</children>
+						</VBox>
+						
+						<!-- security symbol -->
+						<VBox spacing="4">
+							<children>
+								<Label text="symbol"></Label>
+								<SymbolComboBox>
+									<styleClass><String fx:value="symbol-dropdown"/></styleClass>
+								</SymbolComboBox>
+							</children>
+						</VBox>
+						
+						<!-- date range / interval -->
+						<VBox spacing="4">
+							<children>
+								<Label text="date range"></Label>
+								
+								<HBox spacing="2" alignment="CENTER">
+									<children>
+										<!-- start date and interval picker -->
+										<MultiDatePicker  
+											selectionMode="INTERVAL" 
+											valueMode="FIRST">
+											<styleClass><String fx:value="dates-dropdown"/></styleClass>
+										</MultiDatePicker>
+										<!-- end date -->
+										<TextField text="end date"></TextField>
+									</children>
+								</HBox>
+							</children>
+						</VBox>
+						
+						<!-- bar width -->
+						<VBox spacing="4">
+							<children>
+								<Label text="bar width"></Label>
+								<BarWidthComboBox>
+									<styleClass><String fx:value="bar-width-dropDown"/></styleClass>
+								</BarWidthComboBox>
+							</children>
+						</VBox>
+						
+						<!-- sample size -->
+						<VBox spacing="4">
+							<children>
+								<Label text="sample size"></Label>
+								<SampleSizeComboBox>
+									<styleClass><String fx:value="sample-size-dropdown"/></styleClass>
+								</SampleSizeComboBox>
+							</children>
+						</VBox>
+						
+						<!-- sample count -->
+						<VBox spacing="8">
+							<children>
+								<Label text="reps"></Label>
+								<TextField text="30">
+									<styleClass><String fx:value="sample-count-dropdown"/></styleClass>
+								</TextField>
+							</children>
+						</VBox>
+					</children>
+				</FlowPane>
+				
+				<!-- options -->
+				<VBox spacing="4">
+					<children>
+						<Button fx:id="" text="intervals">
+							<tooltip><Tooltip text="score confidence intervals"/></tooltip>
+							<styleClass><String fx:value="intervals-button"/></styleClass>
+						</Button>
+						
+						<Button text="mean line">
+							<styleClass><String fx:value="meanline-button"/></styleClass>
+						</Button>
+					</children>
+				</VBox>
+			</children>
+		</HBox>
+		
+		<!-- graph added dynamically -->
+	</children>
+</VBox>

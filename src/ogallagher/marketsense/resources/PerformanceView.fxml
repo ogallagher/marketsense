@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.net.URL?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.Button?>
+
+<VBox xmlns:fx="http://javafx.com/fxml/1" alignment="CENTER" spacing="4" fillWidth="true">
+	<stylesheets>
+		<URL value="@PerformanceView.css" />
+	</stylesheets>
+	
+	<children>
+		<!-- performance rows -->
+		<VBox spacing="4" fillWidth="true" alignment="CENTER">
+			<children>
+			</children>
+		</VBox>
+		
+		<!-- add graph button -->
+		<Button fx:id="addGraphButton" text="add graph"></Button>
+	</children>
+</VBox>
